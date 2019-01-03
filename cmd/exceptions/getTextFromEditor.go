@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -28,6 +29,10 @@ func getTextFromEditor() (string, error) {
 	// Ugh fiiiiine :þ
 	if editor == "" {
 		editor = findEditor("emacs")
+	}
+
+	if editor == "" {
+		return "", errors.New("No known editor could be found (including via $EDITOR env variable).")
 	}
 
 	defer os.Remove(tmpfile.Name()) // clean up
