@@ -13,6 +13,7 @@ func createDB(db *gorm.DB) {
 	errors1 := db.Debug().AutoMigrate(&Exception{}).GetErrors()
 	errors2 := db.Debug().AutoMigrate(&Comment{}).GetErrors()
 	errors3 := db.Debug().AutoMigrate(&FormFile{}).GetErrors()
+	errors4 := db.Debug().AutoMigrate(&StatusChange{}).GetErrors()
 
 	for _, err := range errors1 {
 		fmt.Printf("%s", err)
@@ -23,13 +24,16 @@ func createDB(db *gorm.DB) {
 	for _, err := range errors3 {
 		fmt.Printf("%s", err)
 	}
+	for _, err := range errors4 {
+		fmt.Printf("%s", err)
+	}
 }
 
 func getDB() *gorm.DB {
 	// If you don't pass parseTime=True here, time.Times won't work properly
-	db, err := gorm.Open("mysql", "test:blah@tcp(127.0.0.1)/test_exceptions?charset=utf8&parseTime=True&loc=Local")
+	//	db, err := gorm.Open("mysql", "test:blah@tcp(127.0.0.1)/test_exceptions?charset=utf8&parseTime=True&loc=Local")
 
-	//db, err := gorm.Open("sqlite3", "./gorm.db")
+	db, err := gorm.Open("sqlite3", "./gorm.db")
 	if err != nil {
 		fmt.Println("Error: could not connect to database.")
 		panic(err)
@@ -37,7 +41,7 @@ func getDB() *gorm.DB {
 
 	createDB(db)
 
-	return db
+	return db.Debug()
 }
 
 func createNoodlingData(db *gorm.DB) {

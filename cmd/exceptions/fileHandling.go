@@ -10,7 +10,7 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-func attach(id int, filename string) {
+func attach(id uint, filename string) {
 	db := getDB()
 	exception := &Exception{}
 	db.First(&exception, id)
@@ -34,7 +34,7 @@ func attach(id int, filename string) {
 	return
 }
 
-func getFilesForException(id int) ([]FormFile, error) {
+func getFilesForException(id uint) ([]FormFile, error) {
 	db := getDB()
 	exception := &Exception{}
 	db.First(&exception, id)
@@ -48,7 +48,7 @@ func getFilesForException(id int) ([]FormFile, error) {
 	return *formFiles, nil
 }
 
-func listFilesForException(id int) {
+func listFilesForException(id uint) {
 	files, err := getFilesForException(id)
 
 	if err != nil {
@@ -78,7 +78,7 @@ func listFilesForException(id int) {
 
 // This is for when you want to download a single file and have
 //  referred to it directly by ID
-func downloadOneFile(fileID int) {
+func downloadOneFile(fileID uint) {
 	db := getDB()
 	file := &FormFile{}
 	db.First(&file, fileID)
@@ -103,7 +103,7 @@ func downloadOneFile(fileID int) {
 
 // This is for when you want all the files for an exception and
 //  have referred to the *exception* by ID, not the file
-func downloadFilesForException(exceptionID int) {
+func downloadFilesForException(exceptionID uint) {
 	files, err := getFilesForException(exceptionID)
 	if err != nil {
 		fmt.Println(err)

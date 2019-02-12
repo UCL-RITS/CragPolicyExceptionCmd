@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"os/user"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -24,12 +26,13 @@ type Exception struct {
 	ExceptionDetail string     `gorm:"type:varchar(512);not null"`
 	FormFiles       []FormFile
 	Comments        []Comment
+	StatusChanges   []StatusChange
 }
 
 type FormFile struct {
 	gorm.Model
 	Exception    Exception
-	ExceptionID  int
+	ExceptionID  uint
 	FileName     string
 	FileContents []byte `gorm:"mediumblob"`
 }
@@ -37,37 +40,40 @@ type FormFile struct {
 type Comment struct {
 	gorm.Model
 	Exception   Exception
-	ExceptionID int
+	ExceptionID uint
+	CommentBy   string `gorm:"type:varchar(10); not null"`
 	CommentText string
 }
 
 type StatusChange struct {
 	gorm.Model
 	Exception   Exception
-	ExceptionID int
+	ExceptionID uint
 	OldStatus   string `gorm:"type:varchar(16);default:'none';not null"`
 	NewStatus   string `gorm:"type:varchar(16);default:'none';not null"`
-	UpdatedBy   string `gorm:"type:varchar(10); not null"`
+	Changer     string `gorm:"type:varchar(10); not null"`
 }
 
 // This is our half-assed state machine map doodad. It determines
 //  what states can be made.
-func isValidChange(oldStatus string, newStatus string) {
+func isValidChange(oldStatus string, newStatus string) bool {
 	validChanges := make(map[string][]string)
+	validChanges["(none)"] = []string{"undecided"}
 	validChanges["undecided"] = []string{"approved", "rejected"}
 	validChanges["approved"] = []string{"implemented"}
 	validChanges["implemented"] = []string{"removed"}
 	validChanges["removed"] = []string{}
+	validChanges["rejected"] = []string{}
 
-	for k, v := range validChanges[oldStatus] {
-		if v == newState {
+	for _, v := range validChanges[oldStatus] {
+		if v == newStatus {
 			return true
 		}
 	}
 	return false
 }
 
-func GetException(id int) {
+func GetException(id uint) *Exception {
 	db := getDB()
 	exception := &Exception{}
 	db.First(&exception, id)
@@ -76,18 +82,105 @@ func GetException(id int) {
 
 func (exception *Exception) GetStatus() string {
 	db := getDB()
-	//db.Related(exception, "StatusChange")
-	// I need to get the most recent (ie. highest update time) of the status changes for a given Exception
-	// There's a clever way to do this and you must google it out of the Gorm docs
-	return "???"
+	if db.Model(exception).Association("StatusChanges").Count() == 0 {
+		return "(none)"
+	}
+
+	var statusChanges []StatusChange
+
+	// Iterates over all the status changes for an entry and finds
+	//  the one with the largest created time, to get the most recent
+	db.Model(exception).Related(&statusChanges)
+	maxTime := time.Unix(0, 0)
+	maxK := 0
+	for k, v := range statusChanges {
+		if maxTime.Before(v.CreatedAt) {
+			maxK = k
+			maxTime = v.CreatedAt
+		}
+	}
+	return statusChanges[maxK].NewStatus
 }
 
-func (exception *Exception) ChangeStatus(id int, newStatus string) error {
-	nowTime := time.Now()
+func (exception *Exception) ChangeStatusTo(newStatus string) error {
 	currentStatus := exception.GetStatus()
 	if !isValidChange(currentStatus, newStatus) {
-		return error(fmt.Sprintf("Proposed change (%s -> %s) is invalid", currentStatus, newStatus))
-		exception.UpdateStatus(newStatus)
+		return errors.New(fmt.Sprintf("Proposed status change (%s -> %s) is invalid", currentStatus, newStatus))
+	}
+
+	currentUser, err := user.Current()
+	if err != nil {
+		panic("Could not get the current username")
+	}
+	statusChange := &StatusChange{ExceptionID: exception.ID, OldStatus: currentStatus, NewStatus: newStatus, Changer: currentUser.Username}
+
+	db := getDB()
+	db.Create(statusChange)
+	db.NewRecord(statusChange)
+	db.Save(exception)
+
+	return nil
+}
+
+func (exception *Exception) AddComment(text string) {
+
+	currentUser, err := user.Current()
+	if err != nil {
+		panic("could not get current user name")
+	}
+	currentUsername := currentUser.Username
+	comment := &Comment{ExceptionID: exception.ID, CommentText: text, CommentBy: currentUsername}
+
+	db := getDB()
+	db.Save(comment)
+}
+
+func (exception *Exception) DurationRemaining() (*time.Duration, string) {
+	if exception.EndDate == nil || exception.StartDate == nil {
+		return nil, "--"
+	}
+
+	if time.Now().After(*exception.EndDate) {
+		return nil, "finished"
+	}
+
+	if time.Now().Before(*exception.StartDate) {
+		return nil, "not started yet"
+	}
+
+	duration := time.Until(*exception.EndDate)
+	return &duration, ""
+}
+
+func approve(ID uint) {
+	exception := GetException(ID)
+	err := exception.ChangeStatusTo("approved")
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func reject(ID uint) {
+	exception := GetException(ID)
+	err := exception.ChangeStatusTo("rejected")
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func implement(ID uint) {
+	exception := GetException(ID)
+	err := exception.ChangeStatusTo("implemented")
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func remove(ID uint) {
+	exception := GetException(ID)
+	err := exception.ChangeStatusTo("removed")
+	if err != nil {
+		fmt.Println(err)
 	}
 }
 
@@ -132,9 +225,13 @@ func list(kind string) {
 	case "removed":
 		db.Where("status = 'removed'").Find(&listSet)
 		printExceptionTableSummary(listSet)
+	case "todo":
+		db.Where("(status = 'implemented' AND end_date < " + timeNow + ") OR (status = 'approved' AND start_date > " + timeNow + ") OR (status = 'undecided')").Find(&listSet)
+		printExceptionTableSummary(listSet)
 	case "inconsistent":
 		// This should cover any weird states that an exception could get into where it needs fixing
 		// TODO try to think of more states here
+		// TODO move this out into a call like IsInconsistent and then run for each Exception
 		db.Where("(submitted_date IS NULL) OR " +
 			"(start_date IS NULL AND end_date IS NOT NULL) OR " +
 			"(removed_date IS NOT NULL AND implemented_date IS NULL) OR " +
@@ -176,11 +273,13 @@ func printExceptionTableSummary(exceptions []Exception) {
 	table.SetBorder(false)
 
 	for _, ex := range exceptions {
+		var statusString string
 		numComments := db.Model(&ex).Association("Comments").Count()
 		numAttachments := db.Model(&ex).Association("FormFiles").Count()
+		statusString = ex.GetStatus()
 		table.Append([]string{fmt.Sprintf("%d", ex.ID),
 			ex.Username,
-			ex.Status,
+			statusString,
 			stringFromDate(ex.SubmittedDate),
 			stringFromDate(ex.StartDate),
 			stringFromDate(ex.EndDate),
@@ -228,10 +327,11 @@ func submitWithAllParts(username string, submitDateString string, startDateStrin
 	defer db.Close()
 	db.NewRecord(exception)
 	db.Create(&exception)
+
+	exception.ChangeStatusTo("undecided")
 }
 
-func comment(id int) {
-
+func comment(id uint) {
 	db := getDB()
 	exception := &Exception{}
 
@@ -258,33 +358,30 @@ func comment(id int) {
 		commentText = *commentTextArg
 	}
 
-	comment := &Comment{ExceptionID: id, CommentText: commentText}
+	currentUser, err := user.Current()
+	currentUsername := currentUser.Username
+	comment := &Comment{ExceptionID: id, CommentText: commentText, CommentBy: currentUsername}
 
 	db.Save(comment)
 	return
 }
 
 func timeRemaining(exception *Exception) string {
-	if exception.EndDate == nil || exception.StartDate == nil {
-		return "--"
+	remaining, msg := exception.DurationRemaining()
+
+	if remaining == nil {
+		return msg
 	}
 
-	if time.Now().After(*exception.EndDate) {
-		return "finished"
-	}
-
-	if time.Now().Before(*exception.StartDate) {
-		return "not started yet"
-	}
-
-	return fmt.Sprintf("%d days", int(time.Until(*exception.EndDate).Hours()/24))
+	return fmt.Sprintf("%d days", int(remaining.Hours()/24))
 }
 
-func details(id int) {
+func details(id uint) {
 	db := getDB()
 	exception := &Exception{}
 	var comments []Comment
 	var files []FormFile
+	var statusChanges []StatusChange
 
 	errors := db.First(&exception, id).GetErrors()
 
@@ -300,6 +397,7 @@ func details(id int) {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetBorder(false)
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
+	table.SetColWidth(80)
 
 	timeRemaining := timeRemaining(exception)
 
@@ -314,11 +412,17 @@ func details(id int) {
 		[]string{"Starts", stringFromDate(exception.StartDate)},
 		[]string{"Ends", stringFromDate(exception.EndDate)},
 		[]string{"Remaining", timeRemaining},
-		[]string{"Status", exception.Status},
-		[]string{"Decided", stringFromDate(exception.DecidedDate)},
-		[]string{"Decided By", exception.DecidedBy},
-		[]string{"Implemented", stringFromDate(exception.ImplementedDate)},
-		[]string{"Removed", stringFromDate(exception.RemovedDate)},
+		[]string{"Status", exception.GetStatus()},
+	}
+
+	db.Model(&exception).Related(&statusChanges)
+	if len(statusChanges) == 0 {
+		data = append(data, []string{"Status Updates", "(none)"})
+	} else {
+		statusRowLabel := "Status Change"
+		for _, v := range statusChanges {
+			data = append(data, []string{statusRowLabel, fmt.Sprintf("%s -> %s, by %s [%s]", v.OldStatus, v.NewStatus, v.Changer, v.UpdatedAt.Format("2006-01-02"))})
+		}
 	}
 
 	db.Model(&exception).Related(&files)

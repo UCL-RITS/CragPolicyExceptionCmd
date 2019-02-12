@@ -9,6 +9,8 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
+// TODO: I feel like there *should* be an edit option, but I'm not sure how it should work.
+
 var (
 	app = kingpin.New("exceptions", "A tool for handling the policy exception entries in the database.")
 	// Add debug flag on app here for DB call debugging
@@ -22,9 +24,9 @@ var (
 	implementCmd = app.Command("implemented", "Mark an existing exception as implemented")
 	removeCmd    = app.Command("remove", "Mark an existing exception as removed")
 	formCmd      = app.Command("form", "Handle the exception form files")
-	editCmd      = app.Command("edit", "Edit an existing exception")
-	commentCmd   = app.Command("comment", "Add a comment to an existing exception")
-	detailsCmd   = app.Command("details", "View all details for an exception")
+	//	editCmd      = app.Command("edit", "Edit an existing exception")
+	commentCmd = app.Command("comment", "Add a comment to an existing exception")
+	detailsCmd = app.Command("details", "View all details for an exception")
 	//jsonDumpCmd = app.Command("jsondump", "Dump details of an exception as JSON")
 
 	dbsetupCmd = app.Command("dbsetup", "Create the exceptions DB")
@@ -42,7 +44,7 @@ var (
 	submitExceptionType   = submitCmd.Flag("type", "What type of exception it is.").Default("quota").String()
 	submitExceptionDetail = submitCmd.Flag("detail", "Detail of the exception: quota size, queue length, etc.").Default("{'pool': 'home', 'size':'1TB'}").String()
 
-	listOpts      = []string{"all", "undecided", "approved", "rejected", "needed", "active", "removed", "overdue", "pending", "inconsistent"}
+	listOpts      = []string{"all", "undecided", "approved", "rejected", "needed", "active", "removed", "overdue", "pending", "inconsistent", "todo"}
 	listHelp      = fmt.Sprintf("Class of exception to list (%s)", strings.Join(listOpts, ", "))
 	listClassEnum = listCmd.Arg("class", listHelp).Default("all").Enum(listOpts...)
 
@@ -51,22 +53,23 @@ var (
 	downloadForExSubcmd = formCmd.Command("download-for", "")
 	filelistSubcmd      = formCmd.Command("list", "")
 
-	approveID     = approveCmd.Arg("id", "").Required().Int()
-	rejectID      = rejectCmd.Arg("id", "").Required().Int()
-	removeID      = removeCmd.Arg("id", "").Required().Int()
-	implementID   = implementCmd.Arg("id", "").Required().Int()
-	attachID      = attachSubcmd.Arg("id", "").Required().Int()
-	downloadID    = downloadSubcmd.Arg("id", "").Required().Int()
-	downloadForID = downloadForExSubcmd.Arg("id", "").Required().Int()
-	filelistID    = filelistSubcmd.Arg("id", "").Required().Int()
-	editID        = editCmd.Arg("id", "").Required().Int()
-	commentID     = commentCmd.Arg("id", "").Required().Int()
-	detailsID     = detailsCmd.Arg("id", "").Required().Int()
-	//jsonDumpID    = jsonDumpCmd.Arg("id", "").Required().Int()
+	approveID     = approveCmd.Arg("id", "").Required().Uint()
+	rejectID      = rejectCmd.Arg("id", "").Required().Uint()
+	removeID      = removeCmd.Arg("id", "").Required().Uint()
+	implementID   = implementCmd.Arg("id", "").Required().Uint()
+	attachID      = attachSubcmd.Arg("id", "").Required().Uint()
+	downloadID    = downloadSubcmd.Arg("id", "").Required().Uint()
+	downloadForID = downloadForExSubcmd.Arg("id", "").Required().Uint()
+	filelistID    = filelistSubcmd.Arg("id", "").Required().Uint()
+	//	editID        = editCmd.Arg("id", "").Required().Uint()
+	commentID = commentCmd.Arg("id", "").Required().Uint()
+	detailsID = detailsCmd.Arg("id", "").Required().Uint()
+	//jsonDumpID    = jsonDumpCmd.Arg("id", "").Required().Uint()
 
-	approveApprover = approveCmd.Arg("approver", "Name of the user approving (or 'CRAG')").Required().String()
-	rejectRejecter  = rejectCmd.Arg("rejecter", "Name of the user rejecting (or 'CRAG')").Required().String()
-	//  ^-- Might change these to default to a config file setting later
+	// approveApprover = approveCmd.Arg("approver", "Name of the user approving (or 'CRAG')").Required().String()
+	// rejectRejecter  = rejectCmd.Arg("rejecter", "Name of the user rejecting (or 'CRAG')").Required().String()
+	// //  ^-- Might change these to default to a config file setting later
+	// Changed model so that username is always approver or rejecter -- even if CRAG did the actual approving policy-wise
 
 	commentTextArg = commentCmd.Flag("comment", "Comment text -- if not provided, an editor will open for input").Short('c').Default("").String()
 
@@ -90,9 +93,9 @@ func main() {
 			*submitExceptionType,
 			*submitExceptionDetail)
 	case approveCmd.FullCommand():
-		approve(*approveID, *approveApprover)
+		approve(*approveID)
 	case rejectCmd.FullCommand():
-		reject(*rejectID, *rejectRejecter)
+		reject(*rejectID)
 	case implementCmd.FullCommand():
 		implement(*implementID)
 	case removeCmd.FullCommand():
@@ -105,8 +108,8 @@ func main() {
 		downloadFilesForException(*downloadForID)
 	case filelistSubcmd.FullCommand():
 		listFilesForException(*filelistID)
-	case editCmd.FullCommand():
-		edit(*editID)
+		//	case editCmd.FullCommand():
+		//		edit(*editID)
 	case commentCmd.FullCommand():
 		comment(*commentID)
 	case detailsCmd.FullCommand():
