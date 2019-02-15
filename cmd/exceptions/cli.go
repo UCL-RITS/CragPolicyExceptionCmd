@@ -15,10 +15,14 @@ var (
 	app = kingpin.New("exceptions", "A tool for handling the policy exception entries in the database.")
 	// Add debug flag on app here for DB call debugging
 
-	configFile = app.Flag("config", "Path to config file").Default("/shared/ucl/etc/exceptions_db.conf").String()
+	homeDir = os.Getenv("HOME")
+
+	configFile    = app.Flag("config", "Path to config file").Default(homeDir + "/.exceptions_db.conf").String()
+	gormDebugMode = app.Flag("ormdebug", "Enable ORM debugging output").Bool()
 
 	listCmd      = app.Command("list", "List entries")
 	submitCmd    = app.Command("submit", "Submit a new exception")
+	undecideCmd  = app.Command("undecide", "Mark an existing exception as undecided")
 	approveCmd   = app.Command("approve", "Approve an existing exception")
 	rejectCmd    = app.Command("reject", "Reject an existing exception")
 	implementCmd = app.Command("implemented", "Mark an existing exception as implemented")
@@ -26,11 +30,17 @@ var (
 	formCmd      = app.Command("form", "Handle the exception form files")
 	//	editCmd      = app.Command("edit", "Edit an existing exception")
 	commentCmd = app.Command("comment", "Add a comment to an existing exception")
-	detailsCmd = app.Command("details", "View all details for an exception")
-	//jsonDumpCmd = app.Command("jsondump", "Dump details of an exception as JSON")
+	detailsCmd = app.Command("details", "View all details for an exception").Alias("info").Alias("detail")
 
-	dbsetupCmd = app.Command("dbsetup", "Create the exceptions DB")
+	jsonDumpCmd   = app.Command("dumpjson", "Full-structured dump of all exceptions as JSON.")
+	jsonImportCmd = app.Command("importjson", "Import an array of exceptions as JSON.")
 
+	createDBCmd    = app.Command("createdb", "Create the exceptions DB")
+	destroyDBCmd   = app.Command("destroydb", "Destroy the exceptions DB")
+	makeNoodlesCmd = app.Command("makenoodles", "Insert some sample data to the database (for development)").Hidden()
+
+	// Need these to make default dates below
+	//  Could also make default nil and generate in-function, but have not done that. No particular reason.
 	now                     = time.Now()
 	nowPlusYear             = time.Now().AddDate(1, 0, 0)
 	dateTodayString         = stringFromDate(&now)
@@ -53,10 +63,18 @@ var (
 	downloadForExSubcmd = formCmd.Command("download-for", "")
 	filelistSubcmd      = formCmd.Command("list", "")
 
-	approveID     = approveCmd.Arg("id", "").Required().Uint()
-	rejectID      = rejectCmd.Arg("id", "").Required().Uint()
-	removeID      = removeCmd.Arg("id", "").Required().Uint()
-	implementID   = implementCmd.Arg("id", "").Required().Uint()
+	undecideID  = undecideCmd.Arg("id", "").Required().Uint()
+	approveID   = approveCmd.Arg("id", "").Required().Uint()
+	rejectID    = rejectCmd.Arg("id", "").Required().Uint()
+	removeID    = removeCmd.Arg("id", "").Required().Uint()
+	implementID = implementCmd.Arg("id", "").Required().Uint()
+
+	undecideForceFlag  = undecideCmd.Flag("force", "Ignore normal transition checks.").Short('f').Bool()
+	approveForceFlag   = approveCmd.Flag("force", "Ignore normal transition checks.").Short('f').Bool()
+	rejectForceFlag    = rejectCmd.Flag("force", "Ignore normal transition checks.").Short('f').Bool()
+	removeForceFlag    = removeCmd.Flag("force", "Ignore normal transition checks.").Short('f').Bool()
+	implementForceFlag = implementCmd.Flag("force", "Ignore normal transition checks.").Short('f').Bool()
+
 	attachID      = attachSubcmd.Arg("id", "").Required().Uint()
 	downloadID    = downloadSubcmd.Arg("id", "").Required().Uint()
 	downloadForID = downloadForExSubcmd.Arg("id", "").Required().Uint()
@@ -64,7 +82,6 @@ var (
 	//	editID        = editCmd.Arg("id", "").Required().Uint()
 	commentID = commentCmd.Arg("id", "").Required().Uint()
 	detailsID = detailsCmd.Arg("id", "").Required().Uint()
-	//jsonDumpID    = jsonDumpCmd.Arg("id", "").Required().Uint()
 
 	// approveApprover = approveCmd.Arg("approver", "Name of the user approving (or 'CRAG')").Required().String()
 	// rejectRejecter  = rejectCmd.Arg("rejecter", "Name of the user rejecting (or 'CRAG')").Required().String()
@@ -92,14 +109,16 @@ func main() {
 			*submitService,
 			*submitExceptionType,
 			*submitExceptionDetail)
+	case undecideCmd.FullCommand():
+		undecide(*undecideID, *undecideForceFlag)
 	case approveCmd.FullCommand():
-		approve(*approveID)
+		approve(*approveID, *approveForceFlag)
 	case rejectCmd.FullCommand():
-		reject(*rejectID)
+		reject(*rejectID, *rejectForceFlag)
 	case implementCmd.FullCommand():
-		implement(*implementID)
+		implement(*implementID, *implementForceFlag)
 	case removeCmd.FullCommand():
-		remove(*removeID)
+		remove(*removeID, *removeForceFlag)
 	case attachSubcmd.FullCommand():
 		attach(*attachID, *attachFilename)
 	case downloadSubcmd.FullCommand():
@@ -114,7 +133,17 @@ func main() {
 		comment(*commentID)
 	case detailsCmd.FullCommand():
 		details(*detailsID)
-	case dbsetupCmd.FullCommand():
-		dbsetup()
+	case createDBCmd.FullCommand():
+		createDB()
+	case destroyDBCmd.FullCommand():
+		destroyDB()
+	case makeNoodlesCmd.FullCommand():
+		makeNoodles()
+	case jsonDumpCmd.FullCommand():
+		dumpAllAsJson()
+	case jsonImportCmd.FullCommand():
+		importAllAsJson()
+	default:
+		panic("Barely-handled error in command-line parsing")
 	}
 }

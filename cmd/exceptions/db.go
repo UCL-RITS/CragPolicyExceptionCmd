@@ -9,22 +9,18 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
-func createDB(db *gorm.DB) {
-	errors1 := db.Debug().AutoMigrate(&Exception{}).GetErrors()
-	errors2 := db.Debug().AutoMigrate(&Comment{}).GetErrors()
-	errors3 := db.Debug().AutoMigrate(&FormFile{}).GetErrors()
-	errors4 := db.Debug().AutoMigrate(&StatusChange{}).GetErrors()
+func destroyTables(db *gorm.DB) {
+	errors := db.DropTableIfExists(&Exception{}, &Comment{}, &FormFile{}, &StatusChange{}).GetErrors()
 
-	for _, err := range errors1 {
+	for _, err := range errors {
 		fmt.Printf("%s", err)
 	}
-	for _, err := range errors2 {
-		fmt.Printf("%s", err)
-	}
-	for _, err := range errors3 {
-		fmt.Printf("%s", err)
-	}
-	for _, err := range errors4 {
+}
+
+func createTables(db *gorm.DB) {
+	errors := db.CreateTable(&Exception{}, &Comment{}, &FormFile{}, &StatusChange{}).GetErrors()
+
+	for _, err := range errors {
 		fmt.Printf("%s", err)
 	}
 }
@@ -39,14 +35,21 @@ func getDB() *gorm.DB {
 		panic(err)
 	}
 
-	createDB(db)
-
-	return db.Debug()
+	if *gormDebugMode == true {
+		return db.Set("gorm:auto_preload", true).Debug()
+	}
+	return db.Set("gorm.auto_preload", true)
 }
 
 func createNoodlingData(db *gorm.DB) {
 	nowTime := time.Now()
-	exception := Exception{Username: "uccaiki", SubmittedDate: &nowTime, Service: "legion", ExceptionType: "quota", ExceptionDetail: "scratch:1TB"}
+	aDay, _ := time.ParseDuration("24h")
+	aYear, _ := time.ParseDuration("8760h")
+
+	nowPlusADayTime := nowTime.Add(aDay)
+	nowPlusAYearTime := nowTime.Add(aYear)
+
+	exception := Exception{Username: "uccaiki", SubmittedDate: &nowTime, StartDate: &nowPlusADayTime, EndDate: &nowPlusAYearTime, Service: "legion", ExceptionType: "quota", ExceptionDetail: "scratch:1TB"}
 	db.NewRecord(exception)
 	db.Create(&exception)
 	exception2 := Exception{Username: "uccaiki", SubmittedDate: &nowTime, Service: "legion", ExceptionType: "quota", ExceptionDetail: "home:500MB"}
@@ -57,8 +60,21 @@ func createNoodlingData(db *gorm.DB) {
 	db.Create(&exception3)
 }
 
-func dbsetup() {
+func createDB() {
 	db := getDB()
-	createDB(db)
+	defer db.Close()
+	createTables(db)
+	createNoodlingData(db)
+}
+
+func destroyDB() {
+	db := getDB()
+	defer db.Close()
+	destroyTables(db)
+}
+
+func makeNoodles() {
+	db := getDB()
+	defer db.Close()
 	createNoodlingData(db)
 }

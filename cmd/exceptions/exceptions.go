@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/user"
 	"time"
@@ -17,21 +19,20 @@ import (
 type Exception struct {
 	// Book-keeping and bureaucracy tracking
 	gorm.Model
-	Username        string     `gorm:"type:varchar(10);not null"`
-	SubmittedDate   *time.Time `gorm:"default:NULL"`
-	StartDate       *time.Time `gorm:"default:NULL"`
-	EndDate         *time.Time `gorm:"default:NULL"`
-	Service         string     `gorm:"type:varchar(16);not null"`
-	ExceptionType   string     `gorm:"type:varchar(128);not null"`
-	ExceptionDetail string     `gorm:"type:varchar(512);not null"`
-	FormFiles       []FormFile
-	Comments        []Comment
-	StatusChanges   []StatusChange
+	Username        string         `gorm:"type:varchar(10);not null"`
+	SubmittedDate   *time.Time     `gorm:"default:NULL"`
+	StartDate       *time.Time     `gorm:"default:NULL"`
+	EndDate         *time.Time     `gorm:"default:NULL"`
+	Service         string         `gorm:"type:varchar(16);not null"`
+	ExceptionType   string         `gorm:"type:varchar(128);not null"`
+	ExceptionDetail string         `gorm:"type:varchar(512);not null"`
+	FormFiles       []FormFile     `gorm:"foreignkey:ExceptionID"`
+	Comments        []Comment      `gorm:"foreignkey:ExceptionID"`
+	StatusChanges   []StatusChange `gorm:"foreignkey:ExceptionID"`
 }
 
 type FormFile struct {
 	gorm.Model
-	Exception    Exception
 	ExceptionID  uint
 	FileName     string
 	FileContents []byte `gorm:"mediumblob"`
@@ -39,7 +40,6 @@ type FormFile struct {
 
 type Comment struct {
 	gorm.Model
-	Exception   Exception
 	ExceptionID uint
 	CommentBy   string `gorm:"type:varchar(10); not null"`
 	CommentText string
@@ -47,7 +47,6 @@ type Comment struct {
 
 type StatusChange struct {
 	gorm.Model
-	Exception   Exception
 	ExceptionID uint
 	OldStatus   string `gorm:"type:varchar(16);default:'none';not null"`
 	NewStatus   string `gorm:"type:varchar(16);default:'none';not null"`
@@ -75,36 +74,45 @@ func isValidChange(oldStatus string, newStatus string) bool {
 
 func GetException(id uint) *Exception {
 	db := getDB()
+	defer db.Close()
 	exception := &Exception{}
-	db.First(&exception, id)
+	db.Set("gorm:auto_preload", true).First(&exception, id)
 	return exception
 }
 
 func (exception *Exception) GetStatus() string {
 	db := getDB()
-	if db.Model(exception).Association("StatusChanges").Count() == 0 {
+	defer db.Close()
+
+	// If the exception status changes have been preloaded correctly,
+	//   the db and the object should agree on the number of changes
+	// If not, we have to grab them ourselves
+
+	canonicalStatusChangeCount := db.Model(exception).Association("StatusChanges").Count()
+
+	if canonicalStatusChangeCount == 0 {
 		return "(none)"
 	}
 
 	var statusChanges []StatusChange
+	var lastStatusChange StatusChange
 
-	// Iterates over all the status changes for an entry and finds
-	//  the one with the largest created time, to get the most recent
-	db.Model(exception).Related(&statusChanges)
-	maxTime := time.Unix(0, 0)
-	maxK := 0
-	for k, v := range statusChanges {
-		if maxTime.Before(v.CreatedAt) {
-			maxK = k
-			maxTime = v.CreatedAt
-		}
+	if canonicalStatusChangeCount != len(exception.StatusChanges) {
+		// Currently this db call orders *all* the statusChanges --
+		//  I'm not sure how to change the query line to make it
+		//  stop doing that but it seems like it should be possible >:T
+		db.Model(exception).Related(&statusChanges).Last(&lastStatusChange)
+	} else {
+		lastStatusChange = exception.StatusChanges[canonicalStatusChangeCount-1]
 	}
-	return statusChanges[maxK].NewStatus
+
+	fmt.Println(statusChanges)
+	return lastStatusChange.NewStatus
 }
 
-func (exception *Exception) ChangeStatusTo(newStatus string) error {
+func (exception *Exception) ChangeStatusTo(newStatus string, checkChangeValidity bool) error {
 	currentStatus := exception.GetStatus()
-	if !isValidChange(currentStatus, newStatus) {
+	if (!checkChangeValidity) && (!isValidChange(currentStatus, newStatus)) {
 		return errors.New(fmt.Sprintf("Proposed status change (%s -> %s) is invalid", currentStatus, newStatus))
 	}
 
@@ -112,7 +120,12 @@ func (exception *Exception) ChangeStatusTo(newStatus string) error {
 	if err != nil {
 		panic("Could not get the current username")
 	}
-	statusChange := &StatusChange{ExceptionID: exception.ID, OldStatus: currentStatus, NewStatus: newStatus, Changer: currentUser.Username}
+	statusChange := &StatusChange{
+		ExceptionID: exception.ID,
+		OldStatus:   currentStatus,
+		NewStatus:   newStatus,
+		Changer:     currentUser.Username,
+	}
 
 	db := getDB()
 	db.Create(statusChange)
@@ -152,33 +165,41 @@ func (exception *Exception) DurationRemaining() (*time.Duration, string) {
 	return &duration, ""
 }
 
-func approve(ID uint) {
+func undecide(ID uint, force bool) {
 	exception := GetException(ID)
-	err := exception.ChangeStatusTo("approved")
+	err := exception.ChangeStatusTo("undecided", force)
 	if err != nil {
 		fmt.Println(err)
 	}
 }
 
-func reject(ID uint) {
+func approve(ID uint, force bool) {
 	exception := GetException(ID)
-	err := exception.ChangeStatusTo("rejected")
+	err := exception.ChangeStatusTo("approved", force)
 	if err != nil {
 		fmt.Println(err)
 	}
 }
 
-func implement(ID uint) {
+func reject(ID uint, force bool) {
 	exception := GetException(ID)
-	err := exception.ChangeStatusTo("implemented")
+	err := exception.ChangeStatusTo("rejected", force)
 	if err != nil {
 		fmt.Println(err)
 	}
 }
 
-func remove(ID uint) {
+func implement(ID uint, force bool) {
 	exception := GetException(ID)
-	err := exception.ChangeStatusTo("removed")
+	err := exception.ChangeStatusTo("implemented", force)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func remove(ID uint, force bool) {
+	exception := GetException(ID)
+	err := exception.ChangeStatusTo("removed", force)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -231,7 +252,8 @@ func list(kind string) {
 	case "inconsistent":
 		// This should cover any weird states that an exception could get into where it needs fixing
 		// TODO try to think of more states here
-		// TODO move this out into a call like IsInconsistent and then run for each Exception
+		// Ideally we'd move this out into a call like IsInconsistent and then run for each Exception
+		//  but that would be *much* slower
 		db.Where("(submitted_date IS NULL) OR " +
 			"(start_date IS NULL AND end_date IS NOT NULL) OR " +
 			"(removed_date IS NOT NULL AND implemented_date IS NULL) OR " +
@@ -328,7 +350,7 @@ func submitWithAllParts(username string, submitDateString string, startDateStrin
 	db.NewRecord(exception)
 	db.Create(&exception)
 
-	exception.ChangeStatusTo("undecided")
+	exception.ChangeStatusTo("undecided", true)
 }
 
 func comment(id uint) {
@@ -378,12 +400,13 @@ func timeRemaining(exception *Exception) string {
 
 func details(id uint) {
 	db := getDB()
+	defer db.Close()
 	exception := &Exception{}
 	var comments []Comment
 	var files []FormFile
 	var statusChanges []StatusChange
 
-	errors := db.First(&exception, id).GetErrors()
+	errors := db.Set("gorm:auto_preload", true).First(&exception, id).GetErrors()
 
 	if exception.ID == 0 {
 		fmt.Println("No record of that exception.")
@@ -449,5 +472,47 @@ func details(id uint) {
 
 	table.AppendBulk(data)
 	table.Render()
+}
 
+func dumpAllAsJson() {
+	var allExceptions []Exception
+	db := getDB()
+	db.Preload("Comments").Preload("FormFiles").Preload("StatusChanges").Find(&allExceptions)
+	jsonBytes, err := json.MarshalIndent(allExceptions, "", " ")
+
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(jsonBytes))
+	return
+}
+
+func importAllAsJson() {
+	var exceptionsImport []Exception
+	buffer, err := ioutil.ReadAll(os.Stdin)
+
+	if err != nil {
+		panic(err)
+	}
+
+	err = json.Unmarshal(buffer, &exceptionsImport)
+
+	if err != nil {
+		panic(err)
+	}
+
+	db := getDB()
+	importTransaction := db.Begin()
+
+	for _, e := range exceptionsImport {
+		errs := db.Save(&e).GetErrors()
+		if len(errs) != 0 {
+			fmt.Println(errs)
+			importTransaction.Rollback()
+			break
+		}
+	}
+	importTransaction.Commit()
+
+	return
 }
