@@ -12,6 +12,10 @@ import (
 // TODO: I feel like there *should* be an edit option, but I'm not sure how it should work.
 
 var (
+	// These are set from the CLI in the build command
+	commitLabel string
+	buildDate   string
+
 	app = kingpin.New("exceptions", "A tool for handling the policy exception entries in the database.")
 	// Add debug flag on app here for DB call debugging
 
@@ -98,6 +102,7 @@ var (
 )
 
 func main() {
+	kingpin.Version(fmt.Sprintf("exceptions commit %s built on %s", commitLabel, buildDate))
 	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
 	case listCmd.FullCommand():
 		list(*listClassEnum)
