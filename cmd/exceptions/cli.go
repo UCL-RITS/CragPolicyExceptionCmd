@@ -36,6 +36,7 @@ var (
 	//	editCmd      = app.Command("edit", "Edit an existing exception")
 	commentCmd = app.Command("comment", "Add a comment to an existing exception")
 	detailsCmd = app.Command("details", "View all details for an exception").Alias("info").Alias("detail")
+	renewCmd   = app.Command("renew", "[Not Yet Implemented] Adds time onto an existing exception.")
 
 	jsonDumpCmd   = app.Command("dumpjson", "Full-structured dump of all exceptions as JSON.")
 	jsonImportCmd = app.Command("importjson", "Import an array of exceptions as JSON.")
@@ -152,6 +153,8 @@ func main() {
 		dumpAllAsJson()
 	case jsonImportCmd.FullCommand():
 		importAllAsJson()
+	case renewCmd.FullCommand():
+		notYetImplemented()
 	default:
 		kingpin.FatalUsage("Barely-handled error in command-line parsing")
 	}
