@@ -35,7 +35,7 @@ type FormFile struct {
 	gorm.Model
 	ExceptionID  uint
 	FileName     string
-	FileContents []byte `gorm:"mediumblob"`
+	FileContents []byte `gorm:"mediumblob"` // Note: in MySQL 5.5 and 8.0 at least, mediumblobs can hold a maximum of 16 megabytes. This *SHOULD* be fine for all our cases.
 }
 
 type Comment struct {
@@ -413,8 +413,11 @@ func details(id uint) {
 		return
 	}
 
-	for _, v := range errors {
-		fmt.Println(v)
+	if len(errors) != 0 {
+		for _, v := range errors {
+			fmt.Println(v)
+		}
+		panic("Errors getting exception from DB! See above.")
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
