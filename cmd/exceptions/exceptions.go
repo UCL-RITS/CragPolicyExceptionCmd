@@ -110,6 +110,22 @@ func (exception *Exception) GetStatus() string {
 	return lastStatusChange.NewStatus
 }
 
+func SoftDeleteException(id uint) []error {
+	db := getDB()
+	defer db.Close()
+	exception := &Exception{}
+	db.Set("gorm:auto_preload", true).First(&exception, id)
+	return db.Delete(&exception).GetErrors()
+}
+
+func edelete(ID uint) {
+	errors := SoftDeleteException(ID)
+	if len(errors) != 0 {
+		log.Fatal(errors)
+	}
+	return
+}
+
 func (exception *Exception) ChangeStatusTo(newStatus string, checkChangeValidity bool) error {
 	currentStatus := exception.GetStatus()
 	if (!checkChangeValidity) && (!isValidChange(currentStatus, newStatus)) {

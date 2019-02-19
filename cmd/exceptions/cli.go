@@ -31,6 +31,7 @@ var (
 	rejectCmd    = app.Command("reject", "Reject an existing exception")
 	implementCmd = app.Command("implemented", "Mark an existing exception as implemented")
 	removeCmd    = app.Command("remove", "Mark an existing exception as removed")
+	deleteCmd    = app.Command("delete", "Delete an existing exception.")
 	formCmd      = app.Command("form", "Handle the exception form files")
 	//	editCmd      = app.Command("edit", "Edit an existing exception")
 	commentCmd = app.Command("comment", "Add a comment to an existing exception")
@@ -72,6 +73,7 @@ var (
 	rejectID    = rejectCmd.Arg("id", "").Required().Uint()
 	removeID    = removeCmd.Arg("id", "").Required().Uint()
 	implementID = implementCmd.Arg("id", "").Required().Uint()
+	deleteID    = deleteCmd.Arg("id", "").Required().Uint()
 
 	undecideForceFlag  = undecideCmd.Flag("force", "Ignore normal transition checks.").Short('f').Bool()
 	approveForceFlag   = approveCmd.Flag("force", "Ignore normal transition checks.").Short('f').Bool()
@@ -124,6 +126,8 @@ func main() {
 		implement(*implementID, *implementForceFlag)
 	case removeCmd.FullCommand():
 		remove(*removeID, *removeForceFlag)
+	case deleteCmd.FullCommand():
+		edelete(*removeID) // Delete is a keeeeyword, oops
 	case attachSubcmd.FullCommand():
 		attach(*attachID, *attachFilename)
 	case downloadSubcmd.FullCommand():
