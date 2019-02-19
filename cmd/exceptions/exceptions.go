@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/user"
 	"time"
@@ -106,7 +107,6 @@ func (exception *Exception) GetStatus() string {
 		lastStatusChange = exception.StatusChanges[canonicalStatusChangeCount-1]
 	}
 
-	fmt.Println(statusChanges)
 	return lastStatusChange.NewStatus
 }
 
@@ -169,7 +169,7 @@ func undecide(ID uint, force bool) {
 	exception := GetException(ID)
 	err := exception.ChangeStatusTo("undecided", force)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 }
 
@@ -177,7 +177,7 @@ func approve(ID uint, force bool) {
 	exception := GetException(ID)
 	err := exception.ChangeStatusTo("approved", force)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 }
 
@@ -185,7 +185,7 @@ func reject(ID uint, force bool) {
 	exception := GetException(ID)
 	err := exception.ChangeStatusTo("rejected", force)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 }
 
@@ -193,7 +193,7 @@ func implement(ID uint, force bool) {
 	exception := GetException(ID)
 	err := exception.ChangeStatusTo("implemented", force)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 }
 
@@ -201,12 +201,12 @@ func remove(ID uint, force bool) {
 	exception := GetException(ID)
 	err := exception.ChangeStatusTo("removed", force)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 }
 
 func notYetImplemented() {
-	fmt.Printf("This thing not yet implemented.\n")
+	log.Fatal("This thing not yet implemented.\n")
 	panic("!")
 }
 
@@ -286,7 +286,7 @@ func printExceptionTableSummary(exceptions []Exception) {
 	db := getDB()
 
 	if len(exceptions) == 0 {
-		fmt.Println("No such records found.")
+		log.Print("No such records found.")
 		return
 	}
 
@@ -323,17 +323,17 @@ func submitWithAllParts(username string, submitDateString string, startDateStrin
 
 	submitDate, err = time.Parse("2006-01-02", submitDateString)
 	if err != nil {
-		panic("Could not parse submit date")
+		log.Fatalln("Could not parse submit date")
 	}
 
 	startDate, err = time.Parse("2006-01-02", startDateString)
 	if err != nil {
-		panic("Could not parse start date")
+		log.Fatalln("Could not parse start date")
 	}
 
 	endDate, err = time.Parse("2006-01-02", endDateString)
 	if err != nil {
-		panic("Could not parse end date")
+		log.Fatalln("Could not parse end date")
 	}
 
 	// Then create the exception
@@ -360,7 +360,7 @@ func comment(id uint) {
 	exRetrErrors := db.First(&exception, id).GetErrors()
 
 	if exception.ID == 0 {
-		fmt.Println("No record of that exception.")
+		log.Fatalln("No record of that exception.")
 		return
 	}
 
@@ -409,7 +409,7 @@ func details(id uint) {
 	errors := db.Set("gorm:auto_preload", true).First(&exception, id).GetErrors()
 
 	if exception.ID == 0 {
-		fmt.Println("No record of that exception.")
+		log.Print("No record of that exception.")
 		return
 	}
 
@@ -417,7 +417,7 @@ func details(id uint) {
 		for _, v := range errors {
 			fmt.Println(v)
 		}
-		panic("Errors getting exception from DB! See above.")
+		log.Fatalln("Errors getting exception from DB! See above.")
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
@@ -510,7 +510,7 @@ func importAllAsJson() {
 	for _, e := range exceptionsImport {
 		errs := db.Save(&e).GetErrors()
 		if len(errs) != 0 {
-			fmt.Println(errs)
+			log.Print(errs)
 			importTransaction.Rollback()
 			break
 		}

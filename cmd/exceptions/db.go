@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -26,15 +27,19 @@ func createTables(db *gorm.DB) {
 }
 
 func getDB() *gorm.DB {
-	// If you don't pass parseTime=True here, time.Times won't work properly
-	//	db, err := gorm.Open("mysql", "test:blah@tcp(127.0.0.1)/test_exceptions?charset=utf8&parseTime=True&loc=Local")
+	dbConfig := parseDBConfig(*configFile)
 
-	db, err := gorm.Open("sqlite3", "./gorm.db")
-	if err != nil {
-		fmt.Println("Error: could not connect to database.")
-		panic(err)
+	if dbConfig.DBType == "mysql" {
+		// If you don't pass parseTime=True here for MySQL DBs, time.Times won't work properly
+		dbConfig.DBConnectionString += "?charset=utf8&parseTime=True&loc=Local"
 	}
 
+	db, err := gorm.Open(dbConfig.DBType, dbConfig.DBConnectionString)
+	if err != nil {
+		log.Fatalln("Error: could not connect to database.")
+	}
+
+	// gormDebugMode is a package-scope variable set in the command-line parsing
 	if *gormDebugMode == true {
 		return db.Set("gorm:auto_preload", true).Debug()
 	}
@@ -64,7 +69,6 @@ func createDB() {
 	db := getDB()
 	defer db.Close()
 	createTables(db)
-	createNoodlingData(db)
 }
 
 func destroyDB() {

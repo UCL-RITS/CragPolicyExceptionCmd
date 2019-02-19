@@ -62,10 +62,10 @@ var (
 	listHelp      = fmt.Sprintf("Class of exception to list (%s)", strings.Join(listOpts, ", "))
 	listClassEnum = listCmd.Arg("class", listHelp).Default("all").Enum(listOpts...)
 
-	attachSubcmd        = formCmd.Command("attach", "")
-	downloadSubcmd      = formCmd.Command("download", "")
-	downloadForExSubcmd = formCmd.Command("download-for", "")
-	filelistSubcmd      = formCmd.Command("list", "")
+	attachSubcmd        = formCmd.Command("attach", "Attach a file to an exception.")
+	downloadSubcmd      = formCmd.Command("download", "Download a file by file ID.")
+	downloadForExSubcmd = formCmd.Command("download-for", "Download all files for an exception.")
+	filelistSubcmd      = formCmd.Command("list", "List attached files for an exception.")
 
 	undecideID  = undecideCmd.Arg("id", "").Required().Uint()
 	approveID   = approveCmd.Arg("id", "").Required().Uint()
@@ -80,8 +80,8 @@ var (
 	implementForceFlag = implementCmd.Flag("force", "Ignore normal transition checks.").Short('f').Bool()
 
 	attachID      = attachSubcmd.Arg("id", "").Required().Uint()
-	downloadID    = downloadSubcmd.Arg("id", "").Required().Uint()
-	downloadForID = downloadForExSubcmd.Arg("id", "").Required().Uint()
+	downloadID    = downloadSubcmd.Arg("id", "file ID").Required().Uint()
+	downloadForID = downloadForExSubcmd.Arg("id", "exception ID").Required().Uint()
 	filelistID    = filelistSubcmd.Arg("id", "").Required().Uint()
 	//	editID        = editCmd.Arg("id", "").Required().Uint()
 	commentID = commentCmd.Arg("id", "").Required().Uint()
@@ -149,6 +149,6 @@ func main() {
 	case jsonImportCmd.FullCommand():
 		importAllAsJson()
 	default:
-		panic("Barely-handled error in command-line parsing")
+		kingpin.FatalUsage("Barely-handled error in command-line parsing")
 	}
 }
