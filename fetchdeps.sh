@@ -9,4 +9,6 @@ else
   go get github.com/olekukonko/tablewriter
   go get gopkg.in/alecthomas/kingpin.v2
   go get gopkg.in/AlecAivazis/survey.v1
+  go get github.com/jinzhu/gorm
+  go get github.com/mattn/go-sqlite3
 fi
