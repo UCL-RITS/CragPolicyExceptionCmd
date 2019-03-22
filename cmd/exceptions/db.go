@@ -36,7 +36,7 @@ func getDB() *gorm.DB {
 
 	db, err := gorm.Open(dbConfig.DBType, dbConfig.DBConnectionString)
 	if err != nil {
-		log.Fatalln("Error: could not connect to database.")
+		log.Fatalln("Error: could not connect to database; ", err)
 	}
 
 	// gormDebugMode is a package-scope variable set in the command-line parsing
