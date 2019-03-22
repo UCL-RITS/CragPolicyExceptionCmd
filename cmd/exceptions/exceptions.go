@@ -18,7 +18,8 @@ import (
 )
 
 type Exception struct {
-	// Book-keeping and bureaucracy tracking
+	// The gorm.Model inclusion here adds a number of fields that are automatically
+	//   used and updated by gorm: ID, CreatedAt, UpdatedAt, and DeletedAt
 	gorm.Model
 	Username        string         `gorm:"type:varchar(10);not null"`
 	SubmittedDate   *time.Time     `gorm:"default:NULL"`
@@ -54,8 +55,10 @@ type StatusChange struct {
 	Changer     string `gorm:"type:varchar(10); not null"`
 }
 
-// This is our half-assed state machine map doodad. It determines
-//  what states can be made.
+// This contains a map that determines which statuses can become which other
+//   statuses. It returns true if a state change is allowed, false otherwise.
+// Note that the state change functions have force flags that skip this check
+//   for awkward cases, and it won't break anything -- this is just to direct flow.
 func isValidChange(oldStatus string, newStatus string) bool {
 	validChanges := make(map[string][]string)
 	validChanges["(none)"] = []string{"undecided"}
@@ -73,6 +76,7 @@ func isValidChange(oldStatus string, newStatus string) bool {
 	return false
 }
 
+// Pulls an Exception from the database, by ID (primary key).
 func GetException(id uint) *Exception {
 	db := getDB()
 	defer db.Close()
@@ -81,6 +85,10 @@ func GetException(id uint) *Exception {
 	return exception
 }
 
+// Gets the current status of an Exception by getting the most recent
+//   status update and checking its new status field.
+//
+// Note that this is faster if preloading has been done, but doesn't require it.
 func (exception *Exception) GetStatus() string {
 	db := getDB()
 	defer db.Close()
@@ -110,6 +118,11 @@ func (exception *Exception) GetStatus() string {
 	return lastStatusChange.NewStatus
 }
 
+// This function calls the gorm Delete function on an Exception object.
+// Because the Exception struct has a DeletedAt field, this will soft-delete
+//   the database entry, filling the DeletedAt field with the time and making
+//   all gorm's queries ignore the entry by default.
+// The data will still be in the database.
 func SoftDeleteException(id uint) []error {
 	db := getDB()
 	defer db.Close()
@@ -118,6 +131,7 @@ func SoftDeleteException(id uint) []error {
 	return db.Delete(&exception).GetErrors()
 }
 
+// (CLI entry point for SoftDeletion.)
 func edelete(ID uint) {
 	errors := SoftDeleteException(ID)
 	if len(errors) != 0 {
