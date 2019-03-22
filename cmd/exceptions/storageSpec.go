@@ -1,5 +1,12 @@
 package main
 
+import (
+	"errors"
+	"regexp"
+	"strconv"
+	"strings"
+)
+
 // Note: this is very loose: treats lower and upper-case SI prefixes as equivalent
 //       and treats b and B both as bytes
 func storageSpecToUint64(text string) (uint64, error) {
@@ -53,7 +60,7 @@ func ValidateStorageSpec(val interface{}) error {
 	matches := re.FindStringSubmatch(val.(string))
 
 	if matches == nil {
-		return 0, errors.New("conversion regex did not match")
+		return errors.New("conversion regex did not match")
 	}
 	return nil
 }
@@ -68,7 +75,7 @@ func TidyStorageSpec(spec string) (string, error) {
 	}
 
 	newSpec := ""
-	newSpec += matches[1] + " "
+	newSpec += matches[1]
 
 	switch strings.ToLower(matches[2]) {
 	case "k":
