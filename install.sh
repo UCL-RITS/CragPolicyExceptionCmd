@@ -22,7 +22,7 @@ function check_for_go () {
 echo "Checking go environment..." >&2
 check_for_go
 
-if [[ -n "$TRAVIS" ]]; then
+if [[ -n "${TRAVIS:-}" ]]; then
   INSTALL_PATH="$(mktemp -d)"
 fi
 
