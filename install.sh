@@ -12,7 +12,7 @@ function check_for_go () {
         source /etc/profile.d/modules.sh
         module purge
         module load gcc-libs
-        module load compilers/go
+        module load compilers/go/1.12.4
     else
         echo "Could not get a go compiler, exiting..." >&2
         exit 1
