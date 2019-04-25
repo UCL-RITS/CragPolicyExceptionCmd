@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/user"
@@ -320,7 +319,7 @@ func printExceptionTableSummary(exceptions []Exception) {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ID", "Username", "Status", "Sub Date", "Start Date", "End Date", "Type", "Detail", "Attachments", "Comments"})
+	table.SetHeader([]string{"ID", "Username", "Status", "Sub Date", "Start Date", "End Date", "Service", "Type", "Detail", "Attachments", "Comments"})
 	table.SetBorder(false)
 
 	for _, ex := range exceptions {
@@ -336,6 +335,7 @@ func printExceptionTableSummary(exceptions []Exception) {
 			stringFromDate(ex.EndDate),
 			ex.ExceptionType,
 			ex.ExceptionDetail,
+			ex.Service,
 			fmt.Sprintf("%d", numAttachments),
 			fmt.Sprintf("%d", numComments),
 		})
@@ -459,6 +459,7 @@ func details(id uint) {
 	data := [][]string{
 		[]string{"ID", fmt.Sprint(exception.ID)},
 		[]string{"Username", exception.Username},
+		[]string{"Service", exception.Service},
 		[]string{"Type", exception.ExceptionType},
 		[]string{"Detail", exception.ExceptionDetail},
 		[]string{"Created", exception.CreatedAt.Format("2006-01-02 15:04:05 MST")},
