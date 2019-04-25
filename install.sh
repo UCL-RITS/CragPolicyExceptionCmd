@@ -22,6 +22,10 @@ function check_for_go () {
 echo "Checking go environment..." >&2
 check_for_go
 
+if [[ -n "$TRAVIS" ]]; then
+  INSTALL_PATH="$(mktemp -d)"
+fi
+
 install_path="${INSTALL_PATH:-/shared/ucl/apps/cluster-bin}"
 
 echo "Changing into \"$(dirname -- "$0")\"..." >&2
