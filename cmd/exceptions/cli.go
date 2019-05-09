@@ -44,6 +44,7 @@ var (
 	createDBCmd    = app.Command("createdb", "Create the exceptions DB")
 	destroyDBCmd   = app.Command("destroydb", "Destroy the exceptions DB")
 	makeNoodlesCmd = app.Command("makenoodles", "Insert some sample data to the database (for development)").Hidden()
+	examplesCmd    = app.Command("examples", "Show some examples of use")
 
 	// Need these to make default dates below
 	//  Could also make default nil and generate in-function, but have not done that. No particular reason.
@@ -58,7 +59,7 @@ var (
 	submitEndDate         = submitCmd.Flag("ends", "Date exception should finish. [today plus a year]").Default(dateTodayPlusYearString).String()
 	submitService         = submitCmd.Flag("service", "Which service the exception applies to.").Default("myriad").String()
 	submitExceptionType   = submitCmd.Flag("type", "What type of exception it is.").Default("quota").String()
-	submitExceptionDetail = submitCmd.Flag("detail", "Detail of the exception: quota size, queue length, etc.").Default("{'pool': 'home', 'size':'1TB'}").String()
+	submitExceptionDetail = submitCmd.Flag("detail", "Detail of the exception: quota size, queue length, etc.").Default("5TB Scratch").String()
 
 	listOpts      = []string{"all", "undecided", "approved", "rejected", "needed", "active", "removed", "overdue", "pending", "inconsistent", "todo"}
 	listHelp      = fmt.Sprintf("Class of exception to list (%s)", strings.Join(listOpts, ", "))
@@ -155,6 +156,8 @@ func main() {
 		importAllAsJson()
 	case renewCmd.FullCommand():
 		notYetImplemented()
+	case examplesCmd.FullCommand():
+		printExamples()
 	default:
 		kingpin.FatalUsage("Barely-handled error in command-line parsing")
 	}
