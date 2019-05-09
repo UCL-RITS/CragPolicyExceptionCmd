@@ -29,6 +29,7 @@ type Exception struct {
 	FormFiles       []FormFile     `gorm:"foreignkey:ExceptionID"`
 	Comments        []Comment      `gorm:"foreignkey:ExceptionID"`
 	StatusChanges   []StatusChange `gorm:"foreignkey:ExceptionID"`
+	Status          string         `gorm:"default:'(none)'; not null"`
 }
 
 type FormFile struct {
@@ -83,11 +84,20 @@ func GetException(id uint) *Exception {
 	return exception
 }
 
+// This was added relatively late, because it seemed like the wrong thing
+//  to do (double-tracking the status based on the last audit result and
+//  a separate field) but it made some things *much* easier, at the risk
+//  of being able to become inconsistent.
+// Hence, GetTrackedStatus exists because it used to be GetStatus.
+func (exception *Exception) GetStatus() string {
+	return exception.Status
+}
+
 // Gets the current status of an Exception by getting the most recent
 //   status update and checking its new status field.
 //
 // Note that this is faster if preloading has been done, but doesn't require it.
-func (exception *Exception) GetStatus() string {
+func (exception *Exception) GetTrackedStatus() string {
 	db := getDB()
 	defer db.Close()
 
@@ -154,6 +164,9 @@ func (exception *Exception) ChangeStatusTo(newStatus string, checkChangeValidity
 		NewStatus:   newStatus,
 		Changer:     currentUser.Username,
 	}
+
+	// See the note on GetStatus
+	exception.Status = newStatus
 
 	db := getDB()
 	db.Create(statusChange)
@@ -254,7 +267,7 @@ func list(kind string) {
 		db.Find(&listSet)
 		printExceptionTableSummary(listSet)
 	case "pending":
-		db.Where(timeNow + " < start_date AND decided_date IS NOT NULL").Find(&listSet)
+		db.Where(timeNow + " < start_date AND status = 'approved'").Find(&listSet)
 		printExceptionTableSummary(listSet)
 	case "undecided":
 		db.Where("status = 'undecided'").Find(&listSet)
@@ -278,21 +291,13 @@ func list(kind string) {
 		db.Where("(status = 'implemented' AND end_date < " + timeNow + ") OR (status = 'approved' AND start_date > " + timeNow + ") OR (status = 'undecided')").Find(&listSet)
 		printExceptionTableSummary(listSet)
 	case "inconsistent":
-		// This should cover any weird states that an exception could get into where it needs fixing
-		// TODO try to think of more states here
 		// Ideally we'd move this out into a call like IsInconsistent and then run for each Exception
 		//  but that would be *much* slower
+		// I removed a lot of possibles here that relied on no-longer-existent fields. More checking
+		//  might be useful.
 		db.Where("(submitted_date IS NULL) OR " +
 			"(start_date IS NULL AND end_date IS NOT NULL) OR " +
-			"(removed_date IS NOT NULL AND implemented_date IS NULL) OR " +
-			"(implemented_date IS NOT NULL AND submitted_date IS NULL) OR " +
-			"(removed_date < implemented_date) OR (removed_date < decided_date) OR (removed_date < submitted_date) OR " +
-			"(implemented_date < decided_date) OR (implemented_date < submitted_date) OR " +
-			"(decided_date < submitted_date) OR" +
-			"(start_date > end_date) OR " +
-			"((state = 'undecided') AND ((decided_date IS NOT NULL) OR (implemented_date IS NOT NULL) OR (removed_date IS NOT NULL))) OR " +
-			"((state = 'approved') AND ((implemented_date IS NOT NULL) OR (removed_date IS NOT NULL))) OR " +
-			"((state = 'implemented') AND (removed_date IS NOT NULL)) " +
+			"(start_date > end_date) " +
 			"").Find(&listSet)
 		printExceptionTableSummary(listSet)
 	default:
