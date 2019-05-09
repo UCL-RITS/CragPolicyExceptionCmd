@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"golang.org/x/crypto/ssh/terminal"
+	"os"
 	"regexp"
 )
 
@@ -27,8 +28,13 @@ func printExamples() {
 	}
 }
 
+// TODO: colors
+func sarColors(a_string string) string {
+	return a_string
+}
+
 func stripColors(a_string string) string {
-	reColor = regexp.MustCompile("%^(BOLD|RESET|BLACK|RED|GREEN|YELLOW|BLUE|MAGENTA|CYAN|WHITE)%^")
+	reColor := regexp.MustCompile("%^(BOLD|RESET|BLACK|RED|GREEN|YELLOW|BLUE|MAGENTA|CYAN|WHITE)%^")
 	return reColor.ReplaceAllString(a_string, "")
 }
 
