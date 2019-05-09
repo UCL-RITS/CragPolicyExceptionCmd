@@ -333,9 +333,9 @@ func printExceptionTableSummary(exceptions []Exception) {
 			stringFromDate(ex.SubmittedDate),
 			stringFromDate(ex.StartDate),
 			stringFromDate(ex.EndDate),
+			ex.Service,
 			ex.ExceptionType,
 			ex.ExceptionDetail,
-			ex.Service,
 			fmt.Sprintf("%d", numAttachments),
 			fmt.Sprintf("%d", numComments),
 		})
