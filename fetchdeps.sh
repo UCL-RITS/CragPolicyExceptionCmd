@@ -11,4 +11,5 @@ else
   go get gopkg.in/AlecAivazis/survey.v1
   go get github.com/jinzhu/gorm
   go get github.com/mattn/go-sqlite3
+  go get golang.org/x/crypto/ssh/terminal
 fi
