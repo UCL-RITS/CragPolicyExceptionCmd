@@ -151,7 +151,7 @@ func edelete(ID uint) {
 func (exception *Exception) ChangeStatusTo(newStatus string, checkChangeValidity bool) error {
 	currentStatus := exception.GetStatus()
 	if (!checkChangeValidity) && (!isValidChange(currentStatus, newStatus)) {
-		return errors.New(fmt.Sprintf("Proposed status change (%s -> %s) is invalid", currentStatus, newStatus))
+		return errors.New(fmt.Sprintf("Proposed status change (%s -> %s) is invalid -- use -f to force", currentStatus, newStatus))
 	}
 
 	currentUser, err := user.Current()
