@@ -24,7 +24,6 @@ func attach(id uint, filename string) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(b)
 
 	formFile := &FormFile{}
 	formFile.FileContents = b
