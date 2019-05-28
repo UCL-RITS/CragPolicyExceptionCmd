@@ -36,7 +36,7 @@ type FormFile struct {
 	gorm.Model
 	ExceptionID  uint
 	FileName     string `gorm:"type:text"`
-	FileContents []byte `gorm:"mediumblob"` // Note: in MySQL 5.5 and 8.0 at least, mediumblobs can hold a maximum of 16 megabytes. This *SHOULD* be fine for all our cases.
+	FileContents []byte `gorm:"type:mediumblob"` // Note: in MySQL 5.5 and 8.0 at least, mediumblobs can hold a maximum of 16 megabytes. This *SHOULD* be fine for all our cases.
 }
 
 type Comment struct {
