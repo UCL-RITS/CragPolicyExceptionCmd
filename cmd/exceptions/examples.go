@@ -68,7 +68,7 @@ Statuses
 	
 	These are set by a command of the same name:
 	  exceptions approve 4
-		exceptions implement 4
+		exceptions implemented 4
 		exceptions remove 4
 		exceptions reject 4
 		exceptions undecide 4
