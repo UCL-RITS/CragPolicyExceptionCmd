@@ -10,13 +10,13 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-func attach(id uint, filename string) {
+func attach(id uint, filename string) (uint, error) {
 	db := getDB()
 	exception := &Exception{}
 	db.First(&exception, id)
 	if exception.ID == 0 {
 		fmt.Println("No record of that exception.")
-		return
+		return 0, errors.New("No record of that exception.")
 	}
 
 	basename := filepath.Base(filename)
@@ -30,7 +30,7 @@ func attach(id uint, filename string) {
 	formFile.FileName = basename
 	formFile.ExceptionID = id
 	db.Save(&formFile)
-	return
+	return formFile.ID, nil
 }
 
 func getFilesForException(id uint) ([]FormFile, error) {

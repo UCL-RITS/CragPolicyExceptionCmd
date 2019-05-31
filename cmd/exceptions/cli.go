@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -60,6 +61,9 @@ var (
 	submitService         = submitCmd.Flag("service", "Which service the exception applies to.").Default("myriad").String()
 	submitExceptionType   = submitCmd.Flag("type", "What type of exception it is.").Default("quota").String()
 	submitExceptionDetail = submitCmd.Flag("detail", "Detail of the exception: quota size, queue length, etc.").Default("5TB Scratch").String()
+	submitWithForm        = submitCmd.Flag("form", "Attach a form immediately.").String()
+	submitWithComment     = submitCmd.Flag("comment", "Add a comment immediately.").Short('c').String()
+	submitWithEditComment = submitCmd.Flag("edit-comment", "Open editor to add a comment immediately.").Short('C').Bool()
 
 	listOpts      = []string{"all", "undecided", "approved", "rejected", "needed", "active", "removed", "overdue", "pending", "inconsistent", "todo"}
 	listHelp      = fmt.Sprintf("Class of exception to list (%s)", strings.Join(listOpts, ", "))
@@ -111,13 +115,48 @@ func main() {
 	case listCmd.FullCommand():
 		list(*listClassEnum)
 	case submitCmd.FullCommand():
-		submitWithAllParts(*submitName,
+		if (*submitWithComment != "") && (*submitWithEditComment == true) {
+			log.Fatal("Please only specify one comment mechanism.")
+		}
+		id, err := submitWithAllParts(*submitName,
 			*submitDate,
 			*submitStartDate,
 			*submitEndDate,
 			*submitService,
 			*submitExceptionType,
 			*submitExceptionDetail)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("Exception %d created.", id)
+
+		var formID uint
+		if *submitWithForm != "" {
+			formID, err = attach(id, *submitWithForm)
+			if err != nil {
+				log.Fatal(err)
+			} else {
+				log.Printf("File %d attached to exception %d.", formID, id)
+			}
+		}
+
+		var newCommentID uint
+		if *submitWithComment != "" {
+			newCommentID, err = comment(id, *submitWithComment)
+			if err != nil {
+				log.Fatal(err)
+			} else {
+				log.Printf("Comment %d added to exception %d.", newCommentID, id)
+			}
+		}
+		if *submitWithEditComment == true {
+			newCommentID, err = comment(id, "")
+			if err != nil {
+				log.Fatal(err)
+			} else {
+				log.Printf("Comment %d added to exception %d.", newCommentID, id)
+			}
+		}
 	case undecideCmd.FullCommand():
 		undecide(*undecideID, *undecideForceFlag)
 	case approveCmd.FullCommand():
@@ -131,7 +170,12 @@ func main() {
 	case deleteCmd.FullCommand():
 		edelete(*removeID) // Delete is a keeeeyword, oops
 	case attachSubcmd.FullCommand():
-		attach(*attachID, *attachFilename)
+		newAttachmentID, err := attach(*attachID, *attachFilename)
+		if err != nil {
+			log.Fatal(err)
+		} else {
+			log.Printf("File %d attached to exception %d.", newAttachmentID, *attachID)
+		}
 	case downloadSubcmd.FullCommand():
 		downloadOneFile(*downloadID)
 	case downloadForExSubcmd.FullCommand():
@@ -141,7 +185,12 @@ func main() {
 		//	case editCmd.FullCommand():
 		//		edit(*editID)
 	case commentCmd.FullCommand():
-		comment(*commentID)
+		newCommentID, err := comment(*commentID, *commentTextArg)
+		if err != nil {
+			log.Fatal(err)
+		} else {
+			log.Printf("Comment %d added to exception %d.", newCommentID, *commentID)
+		}
 	case detailsCmd.FullCommand():
 		details(*detailsID)
 	case createDBCmd.FullCommand():

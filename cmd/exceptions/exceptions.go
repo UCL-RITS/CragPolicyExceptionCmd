@@ -176,7 +176,8 @@ func (exception *Exception) ChangeStatusTo(newStatus string, checkChangeValidity
 	return nil
 }
 
-func (exception *Exception) AddComment(text string) {
+func (exception *Exception) AddComment(text string) (uint, error) {
+	// TODO: refactor this and the comment() function together
 
 	currentUser, err := user.Current()
 	if err != nil {
@@ -187,6 +188,7 @@ func (exception *Exception) AddComment(text string) {
 
 	db := getDB()
 	db.Save(comment)
+	return comment.ID, nil
 }
 
 func (exception *Exception) DurationRemaining() (*time.Duration, string) {
@@ -348,7 +350,7 @@ func printExceptionTableSummary(exceptions []Exception) {
 	table.Render()
 }
 
-func submitWithAllParts(username string, submitDateString string, startDateString string, endDateString string, service string, exceptionType string, details string) {
+func submitWithAllParts(username string, submitDateString string, startDateString string, endDateString string, service string, exceptionType string, details string) (uint, error) {
 	// First convert dates into proper formats
 	var submitDate time.Time
 	var startDate time.Time
@@ -385,9 +387,10 @@ func submitWithAllParts(username string, submitDateString string, startDateStrin
 	db.Create(&exception)
 
 	exception.ChangeStatusTo("undecided", true)
+	return exception.ID, nil
 }
 
-func comment(id uint) {
+func comment(id uint, commentText string) (uint, error) {
 	db := getDB()
 	exception := &Exception{}
 
@@ -395,7 +398,7 @@ func comment(id uint) {
 
 	if exception.ID == 0 {
 		log.Fatalln("No record of that exception.")
-		return
+		return 0, errors.New("No record of that exception.")
 	}
 
 	for _, v := range exRetrErrors {
@@ -403,15 +406,12 @@ func comment(id uint) {
 	}
 
 	// commentTextArg is a command line option set in cli.go
-	var commentText string
 	var err error
-	if *commentTextArg == "" {
+	if commentText == "" {
 		commentText, err = getTextFromEditor()
 		if err != nil {
-			panic(err)
+			return 0, err
 		}
-	} else {
-		commentText = *commentTextArg
 	}
 
 	currentUser, err := user.Current()
@@ -419,7 +419,7 @@ func comment(id uint) {
 	comment := &Comment{ExceptionID: id, CommentText: commentText, CommentBy: currentUsername}
 
 	db.Save(comment)
-	return
+	return comment.ID, nil
 }
 
 func timeRemaining(exception *Exception) string {
