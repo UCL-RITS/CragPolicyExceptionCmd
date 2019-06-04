@@ -111,6 +111,9 @@ var (
 
 func main() {
 	kingpin.Version(fmt.Sprintf("exceptions commit %s built on %s", commitLabel, buildDate))
+	if userIsServiceUser() {
+		log.Fatal("Do not run this as a service user/role account.")
+	}
 	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
 	case listCmd.FullCommand():
 		list(*listClassEnum)
