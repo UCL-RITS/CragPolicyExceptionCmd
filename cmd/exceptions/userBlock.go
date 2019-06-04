@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os/user"
+	"strconv"
 )
 
 // We could maintain a list, but ccspapp and ccspap2 are
@@ -14,13 +15,19 @@ func userIsServiceUser() bool {
 	if err != nil {
 		log.Fatal("Could not get the current user's details")
 	}
-	if currentUser.Uid == 0 {
-		return true
-	}
 	if currentUser.Username == "SYSTEM" {
 		return true
 	}
-	if currentUser.Uid < 1024 {
+
+	uid, err := strconv.Atoi(currentUser.Uid)
+	if err != nil {
+		log.Fatal("Could not get current uid: ", err)
+	}
+	if uid == 0 {
+		return true
+	}
+	// Not 100% sure about this, but I think it's fine
+	if uid < 1024 {
 		return true
 	}
 
@@ -29,7 +36,11 @@ func userIsServiceUser() bool {
 	// Yes, blame me if this causes a problem.
 	//  --Ian
 	ccspGid := 215
-	if currentUser.Gid == ccspGid {
+	gid, err := strconv.Atoi(currentUser.Gid)
+	if err != nil {
+		log.Fatal("Could not get current gid: ", err)
+	}
+	if gid == ccspGid {
 		return true
 	}
 
