@@ -69,6 +69,9 @@ var (
 	listHelp      = fmt.Sprintf("Class of exception to list (%s)", strings.Join(listOpts, ", "))
 	listClassEnum = listCmd.Arg("class", listHelp).Default("all").Enum(listOpts...)
 
+	// This is 'c' for cluster to match the jobhist tool
+	listService = listCmd.Flag("service", "List only for one service").Short('c').String()
+
 	attachSubcmd        = formCmd.Command("attach", "Attach a file to an exception.")
 	downloadSubcmd      = formCmd.Command("download", "Download a file by file ID.")
 	downloadForExSubcmd = formCmd.Command("download-for", "Download all files for an exception.")

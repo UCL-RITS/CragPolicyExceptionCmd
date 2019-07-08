@@ -263,6 +263,12 @@ func list(kind string) {
 
 	db := getDB()
 	defer db.Close()
+
+	// *listService is a CLI arg
+	if *listService != "" {
+		db = db.Where("service = '" + (*listService) + "'")
+	}
+
 	var listSet []Exception
 	switch kind {
 	case "all":

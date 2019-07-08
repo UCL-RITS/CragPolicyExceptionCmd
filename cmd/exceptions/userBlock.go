@@ -27,7 +27,8 @@ func userIsServiceUser() bool {
 		return true
 	}
 	// Not 100% sure about this, but I think it's fine
-	if uid < 1024 {
+	//  Revised downwards from 1024 for local computers
+	if uid < 501 {
 		return true
 	}
 
