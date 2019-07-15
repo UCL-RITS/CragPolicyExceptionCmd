@@ -136,7 +136,7 @@ func SoftDeleteException(id uint) []error {
 	defer db.Close()
 	exception := &Exception{}
 	db.Set("gorm:auto_preload", true).First(&exception, id)
-    if (*(exception.ID) == 0) || (exception.ID == nil)) {
+    if exception.ID == 0 {
         return []error{errors.New(fmt.Sprintf("Could not find exception with id %d", id))}
     }
 	return db.Delete(&exception).GetErrors()
