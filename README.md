@@ -11,6 +11,17 @@ When correctly deployed, you should have:
  - a single statically-compiled binary called `exceptions`
  - a JSON configuration file, that is assumed to be in `~/.exceptions_db.conf` (an alternative can be used with the `--config=` option)
 
+### Setting Up the Tool for Yourself
+
+The exceptions CLI tool should be deployed on all our clusters in the `/shared/ucl/apps/cluster-bin` directory, which is included in the `userscripts` module. You just need to copy or create the `~/.exceptions_db.conf` file. Examples for the admin and normal user are in `ccspapp`'s home directory on Myriad:
+
+```
+mysql-exceptions-db-admin.conf  
+mysql-exceptions-db-user.conf
+```
+
+You shouldn't need the `-admin` credentials unless you're planning to destroy the database.
+
 ### JSON Config File Format
 
 Format is as follows for MySQL:
@@ -36,18 +47,15 @@ The DB type can currently only be `mysql` or `sqlite3` (if you want it to work),
 These are parameters passed directly to the GORM library's `gorm.Open` function, so you might want to check the documentation there for more comprehensive information: <http://gorm.io/docs/connecting_to_the_database.html>
 
 
-### Setting Up the Tool for Yourself
-
-The exceptions CLI tool should be deployed on all our clusters in the `/shared/ucl/apps/cluster-bin` directory, which is included in the `userscripts` module. You just need to copy or create the `~/.exceptions_db.conf` file. Examples for the admin and normal user are in `ccspapp`'s home directory on Myriad:
-
-```
-mysql-exceptions-db-admin.conf  
-mysql-exceptions-db-user.conf
-```
-
-You shouldn't need the `-admin` credentials unless you're planning to destroy the database.
-
 ## From-Scratch Setup
+
+### Building the Tool
+
+If you already have a Golang development environment, you may want to clone the repository into the appropriate location, and then run the `build.sh` script in the root of the repository.
+
+Otherwise, you probably want to set the `INSTALL_PATH` environment variable and run the `install.sh` script in the root of the repository, which will create a temporary Go environment to build the tool. The default install path is the one for our clusters: `/shared/ucl/apps/cluster-bin`.
+
+### The Database
 
 To create the MySQL setup, you will need:
 
