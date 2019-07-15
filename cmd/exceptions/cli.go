@@ -174,7 +174,7 @@ func main() {
 	case removeCmd.FullCommand():
 		remove(*removeID, *removeForceFlag)
 	case deleteCmd.FullCommand():
-		edelete(*removeID) // Delete is a keeeeyword, oops
+		edelete(*deleteID) // Delete is a keeeeyword, oops
 	case attachSubcmd.FullCommand():
 		newAttachmentID, err := attach(*attachID, *attachFilename)
 		if err != nil {
