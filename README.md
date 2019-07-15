@@ -22,6 +22,8 @@ mysql-exceptions-db-user.conf
 
 You shouldn't need the `-admin` credentials unless you're planning to destroy the database.
 
+Once you have that working, check `exceptions examples` and `exceptions --help` for more usage instructions.
+
 ### JSON Config File Format
 
 Format is as follows for MySQL:
