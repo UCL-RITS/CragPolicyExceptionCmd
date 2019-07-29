@@ -4,14 +4,11 @@ go:
     - "1.12"
 services:
     - mysql
-jobs:
-    include:
-        - stage: compile
-          script: ./install.sh
-        - stage: test
-          script: ./test.sh
-        - stage: deploy
-          script: skip
+
 before_install:
       - mysql -e 'CREATE DATABASE IF NOT EXISTS service_exceptions_test;'
+install:
+      - ./install.sh
+script:
+      - ./test.sh
 
