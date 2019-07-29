@@ -18,14 +18,20 @@ EOF
 echo "travis_fold:start:Setting up config"
 
 echo "travis_fold:start:Running tests"
+echo "Creating database schema..."
 "$EXE" createdb
+echo "Destroying database schema..."
 "$EXE" destroydb
+echo "Recreating database schema for rest of tests..."
 "$EXE" createdb
-"$EXE" submit --user="someone" --service="myriad"
-"$EXE" submit --user="someone" --service="legion"
-"$EXE" submit --user="someone" --service="grace"
-"$EXE" submit --user="someone" --service="kathleen"
-"$EXE" submit --user="someone" --service="thomas"
-"$EXE" submit --user="someone" --service="michael"
+echo "Submitting several entries..."
+"$EXE" submit --username="someone" --service="myriad"
+"$EXE" submit --username="someone" --service="legion"
+"$EXE" submit --username="someone" --service="grace"
+"$EXE" submit --username="someone" --service="kathleen"
+"$EXE" submit --username="someone" --service="thomas"
+"$EXE" submit --username="someone" --service="michael"
+echo "Listing..."
 "$EXE" list
+echo "Complete."
 echo "travis_fold:end:Running tests"
