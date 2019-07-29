@@ -2,6 +2,8 @@
 
 echo "travis_fold:start:Setting up config"
 
+cat $HOME/.my.cnf
+
 TRAVIS_MYSQL_PORT="$(grep -e '^port=' "$HOME/.my.cnf" | sed -e 's/port=//')"
 
 # The location of the binary is somewhere in /tmp after running install.sh
