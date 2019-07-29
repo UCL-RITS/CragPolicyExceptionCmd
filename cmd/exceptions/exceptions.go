@@ -43,7 +43,7 @@ type Comment struct {
 	gorm.Model
 	ExceptionID uint
 	CommentBy   string `gorm:"type:varchar(10); not null"`
-	CommentText string `gorm:"type:text;default:''; not null"`
+	CommentText string `gorm:"type:text; not null"`
 }
 
 type StatusChange struct {
