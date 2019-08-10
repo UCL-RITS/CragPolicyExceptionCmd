@@ -6,6 +6,12 @@ import (
 	"strings"
 )
 
+// These have global scope so the CLI can tell people
+var (
+    validServices = []string{"myriad", "legion", "grace", "aristotle", "thomas", "michael", "kathleen", "none"}
+    validExceptionTypes = []string{"quota", "queue", "access", "special"}
+)
+
 func filterSubmittedUsername(name string) (string, error) {
 	name = strings.ToLower(name)
 	allowedChars := "abcdefghijklmnopqrstuvxyz1234567890"
@@ -41,7 +47,6 @@ func filterSubmittedUsername(name string) (string, error) {
 func filterSubmittedService(service string) (string, error) {
 	service = strings.ToLower(service)
 	valid := false
-	validServices := []string{"myriad", "legion", "grace", "aristotle", "thomas", "michael", "kathleen", "none"}
 
 	for _, v := range validServices {
 		if service == v {
@@ -55,7 +60,7 @@ func filterSubmittedService(service string) (string, error) {
 	if !valid {
 		// Blank the service var on error to avoid accidental usage of invalid service
 		service = ""
-        errorMsg := fmt.Sprintf("Invalid service, must be: %s", strings.Join(validServices, ','))
+        errorMsg := fmt.Sprintf("Invalid service, must be: %s", strings.Join(validServices, ", "))
         returnError = errors.New(errorMsg)
 	}
 	return service, returnError
@@ -64,9 +69,8 @@ func filterSubmittedService(service string) (string, error) {
 func filterSubmittedExceptionType(exceptionType string) (string, error) {
 	exceptionType = strings.ToLower(exceptionType)
 	valid := false
-	validTypes := []string{"quota", "queue", "access", "special"}
 
-	for _, v := range validTypes {
+	for _, v := range validExceptionTypes {
 		if exceptionType == v {
 			valid = true
 		}
@@ -77,7 +81,7 @@ func filterSubmittedExceptionType(exceptionType string) (string, error) {
 	if !valid {
 		// Blank the service var on error to avoid accidental usage of invalid service
 		exceptionType = ""
-        errorMsg := fmt.Sprintf("Invalid exception type, must be: %s", strings.Join(validTypes, ','))
+        errorMsg := fmt.Sprintf("Invalid exception type, must be: %s", strings.Join(validExceptionTypes, ", "))
 		returnError = errors.New(errorMsg)
 	}
 	return exceptionType, returnError
