@@ -41,7 +41,7 @@ func filterSubmittedUsername(name string) (string, error) {
 func filterSubmittedService(service string) (string, error) {
 	service = strings.ToLower(service)
 	valid := false
-	validServices := []string{"myriad", "legion", "grace", "aristotle", "thomas", "michael", "kathleen"}
+	validServices := []string{"myriad", "legion", "grace", "aristotle", "thomas", "michael", "kathleen", "none"}
 
 	for _, v := range validServices {
 		if service == v {
@@ -55,7 +55,8 @@ func filterSubmittedService(service string) (string, error) {
 	if !valid {
 		// Blank the service var on error to avoid accidental usage of invalid service
 		service = ""
-		returnError = errors.New("Invalid service specified.")
+        errorMsg := fmt.Sprintf("Invalid service, must be: %s", strings.Join(validServices, ','))
+        returnError = errors.New(errorMsg)
 	}
 	return service, returnError
 }
@@ -76,7 +77,8 @@ func filterSubmittedExceptionType(exceptionType string) (string, error) {
 	if !valid {
 		// Blank the service var on error to avoid accidental usage of invalid service
 		exceptionType = ""
-		returnError = errors.New("Invalid exception type specified")
+        errorMsg := fmt.Sprintf("Invalid exception type, must be: %s", strings.Join(validTypes, ','))
+		returnError = errors.New(errorMsg)
 	}
 	return exceptionType, returnError
 }
