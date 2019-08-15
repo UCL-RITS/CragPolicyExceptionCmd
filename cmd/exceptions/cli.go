@@ -58,12 +58,20 @@ var (
 	submitDate            = submitCmd.Flag("submitted", "Date exception was submitted to us. [today]").Default(dateTodayString).String()
 	submitStartDate       = submitCmd.Flag("starts", "Date exception should start. [today]").Default(dateTodayString).String()
 	submitEndDate         = submitCmd.Flag("ends", "Date exception should finish. [today plus a year]").Default(dateTodayPlusYearString).String()
-	submitService         = submitCmd.Flag("service", "Which service the exception applies to.").Default("myriad").String()
-	submitExceptionType   = submitCmd.Flag("type", "What type of exception it is.").Default("quota").String()
 	submitExceptionDetail = submitCmd.Flag("detail", "Detail of the exception: quota size, queue length, etc.").Default("5TB Scratch").String()
 	submitWithForm        = submitCmd.Flag("form", "Attach a form immediately.").String()
 	submitWithComment     = submitCmd.Flag("comment", "Add a comment immediately.").Short('c').String()
 	submitWithEditComment = submitCmd.Flag("edit-comment", "Open editor to add a comment immediately.").Short('C').Bool()
+
+	// The validation strings are set in submitFilters.go
+	submitService = submitCmd.Flag("service",
+		"Which service the exception applies to. ("+
+			validServicesString+
+			")").Default("myriad").String()
+	submitExceptionType = submitCmd.Flag("type",
+		"What type of exception it is. ("+
+			validExceptionTypesString+
+			")").Default("quota").String()
 
 	listOpts      = []string{"all", "undecided", "approved", "rejected", "needed", "active", "removed", "overdue", "pending", "inconsistent", "todo"}
 	listHelp      = fmt.Sprintf("Class of exception to list (%s)", strings.Join(listOpts, ", "))
