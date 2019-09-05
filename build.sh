@@ -5,7 +5,9 @@
 mkdir -p bin
 
 for dir in ./cmd/*; do
-  for arch_label in "" linux-amd64 linux-arm linux-arm64 darwin-amd64; do
+  # For whatever reason, using go-sqlite3 for this project now requires a cross-compiler
+  #  where it didn't before. See: https://github.com/mattn/go-sqlite3/issues/742
+  for arch_label in ""; do
     export GOOS="${arch_label%%-*}"
     export GOARCH="${arch_label##*-}"
     go build \
