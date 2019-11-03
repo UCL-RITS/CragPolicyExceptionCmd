@@ -46,6 +46,34 @@ func getDB() *gorm.DB {
 	return db.Set("gorm.auto_preload", true)
 }
 
+// TODO: make sure it only reads the config once
+func getDBTimeNow() string {
+	dbConfig := parseDBConfig(*configFile)
+	if dbConfig.DBType == "mysql" {
+		return "NOW()"
+	}
+	if dbConfig.DBType == "sqlite" {
+		return "date('now')"
+	}
+	log.Fatalln("Error: DB type was unknown when trying to work out how to get times")
+	return ""
+}
+
+// The compatibility of this forces a slightly awkward format
+//  "5 day"
+//  "14 day"
+func getDBFutureTimes(futureSpec string) string {
+	dbConfig := parseDBConfig(*configFile)
+	if dbConfig.DBType == "mysql" {
+		return "DATE_ADD(NOW(), INTERVAL +" + futureSpec + ")"
+	}
+	if dbConfig.DBType == "sqlite" {
+		return "date('now', '+" + futureSpec + "')"
+	}
+	log.Fatalln("Error: DB type was unknown when trying to work out how to get times")
+	return ""
+}
+
 func createNoodlingData(db *gorm.DB) {
 	nowTime := time.Now()
 	aDay, _ := time.ParseDuration("24h")

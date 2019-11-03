@@ -257,8 +257,7 @@ func notYetImplemented() {
 }
 
 func list(kind string) {
-	//timeNow := "NOW()" // MySQL
-	timeNow := "date('now')" // SQLite
+	timeNow := getDBTimeNow()
 
 	// In theory you'd use these to determine unset but you can just use zero instead
 	//zeroTime := "FROM_UNIXTIME(0)" // MySQL
