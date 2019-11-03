@@ -39,6 +39,8 @@ var (
 	detailsCmd = app.Command("details", "View all details for an exception").Alias("info").Alias("detail")
 	renewCmd   = app.Command("renew", "[Not Yet Implemented] Adds time onto an existing exception.")
 
+	reportCmd = app.Command("report", "Generates a summary report for the week.")
+
 	jsonDumpCmd   = app.Command("dumpjson", "Full-structured dump of all exceptions as JSON.")
 	jsonImportCmd = app.Command("importjson", "Import an array of exceptions as JSON.")
 
@@ -128,6 +130,8 @@ func main() {
 	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
 	case listCmd.FullCommand():
 		list(*listClassEnum)
+	case reportCmd.FullCommand():
+		report()
 	case submitCmd.FullCommand():
 		if (*submitWithComment != "") && (*submitWithEditComment == true) {
 			log.Fatal("Please only specify one comment mechanism.")
