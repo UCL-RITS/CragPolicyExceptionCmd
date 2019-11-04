@@ -39,7 +39,7 @@ var (
 	detailsCmd = app.Command("details", "View all details for an exception").Alias("info").Alias("detail")
 	renewCmd   = app.Command("renew", "[Not Yet Implemented] Adds time onto an existing exception.")
 
-	reportCmd = app.Command("report", "Generates a summary report for the week.")
+	reportCmd = app.Command("report", "Generates a summary report for the week. Gives lists of IDs for exceptions that are undecided, waiting for implementation, waiting to be removed, expiring within 5 days, expiring within 14 days.")
 
 	jsonDumpCmd   = app.Command("dumpjson", "Full-structured dump of all exceptions as JSON.")
 	jsonImportCmd = app.Command("importjson", "Import an array of exceptions as JSON.")
