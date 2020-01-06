@@ -8,11 +8,11 @@ import (
 
 // These have global scope so the CLI can tell people
 var (
-    validServices = []string{"myriad", "legion", "grace", "aristotle", "thomas", "michael", "kathleen", "none"}
-    validExceptionTypes = []string{"quota", "queue", "access", "special"}
+	validServices       = []string{"myriad", "legion", "grace", "aristotle", "thomas", "michael", "kathleen", "none"}
+	validExceptionTypes = []string{"quota", "queue", "access", "special", "sharedspace"}
 
-    validServicesString = strings.Join(validServices, ", ")
-    validExceptionTypesString = strings.Join(validExceptionTypes, ", ")
+	validServicesString       = strings.Join(validServices, ", ")
+	validExceptionTypesString = strings.Join(validExceptionTypes, ", ")
 )
 
 func filterSubmittedUsername(name string) (string, error) {
@@ -63,8 +63,8 @@ func filterSubmittedService(service string) (string, error) {
 	if !valid {
 		// Blank the service var on error to avoid accidental usage of invalid service
 		service = ""
-        errorMsg := fmt.Sprintf("Invalid service, must be: %s", validServicesString)
-        returnError = errors.New(errorMsg)
+		errorMsg := fmt.Sprintf("Invalid service, must be: %s", validServicesString)
+		returnError = errors.New(errorMsg)
 	}
 	return service, returnError
 }
@@ -84,7 +84,7 @@ func filterSubmittedExceptionType(exceptionType string) (string, error) {
 	if !valid {
 		// Blank the service var on error to avoid accidental usage of invalid service
 		exceptionType = ""
-        errorMsg := fmt.Sprintf("Invalid exception type, must be: %s", validExceptionTypesString)
+		errorMsg := fmt.Sprintf("Invalid exception type, must be: %s", validExceptionTypesString)
 		returnError = errors.New(errorMsg)
 	}
 	return exceptionType, returnError
