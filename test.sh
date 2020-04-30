@@ -51,6 +51,8 @@ if "$EXE" submit --username="someone" --service="XXXXXXX"; then
 fi
 pb "Listing..."
 "$EXE" list
+pb "Printing dump..."
+"$EXE" dumpjson
 pb "Testing dump and re-import..."
 "$EXE" dumpjson >"$tmpdir/dump-before.json"
 "$EXE" list >"$tmpdir/dump-before.list"
@@ -59,14 +61,26 @@ pb "  Destroying and recreating db..."
 "$EXE" createdb
 pb "  Checking fresh blank dump matches old one..."
 "$EXE" dumpjson >"$tmpdir/dump-blank-2.json"
-diff -q "$tmpdir/dump-blank.json" "$tmpdir/dump-blank-2.json"
+if ! diff -q "$tmpdir/dump-blank.json" "$tmpdir/dump-blank-2.json"; then
+  pr "blank dumps before and after should be the same, were different."
+  pr "Full diff:"
+  diff "$tmpdir/dump-blank.json" "$tmpdir/dump-blank-2.json"
+fi
 pb "  Reimporting dump..."
 "$EXE" importjson <"$tmpdir/dump-before.json"
 "$EXE" list >"$tmpdir/dump-after.list"
 "$EXE" dumpjson >"$tmpdir/dump-after.json"
 pb "  Comparing before and after data..."
-diff -q "$tmpdir/dump-before.json" "$tmpdir/dump-after.json"
-diff -q "$tmpdir/dump-before.list" "$tmpdir/dump-after.list"
+if ! diff -q "$tmpdir/dump-before.json" "$tmpdir/dump-after.json"; then
+  pr "dumps before and after should be the same, were different."
+  pr "Full diff:"
+  diff "$tmpdir/dump-before.json" "$tmpdir/dump-after.json"
+fi
+if ! diff -q "$tmpdir/dump-before.list" "$tmpdir/dump-after.list"; then
+  pr "listings before and after should be the same, were different."
+  pr "Full diff:"
+  diff "$tmpdir/dump-before.list" "$tmpdir/dump-after.list"
+fi
 pb "  Submitting new entry to create different dump..."
 "$EXE" submit --username="someone" --service="michael"
 "$EXE" dumpjson >"$tmpdir/dump-after-different.json"
