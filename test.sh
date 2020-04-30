@@ -107,18 +107,30 @@ function getprop() {
           -e 's/ *$//' \
           -e 's/^ *//'
 }
+function checkprop() {
+  local prop
+  prop="$(
+    "$EXE" info "$1" \
+      | getprop "$2" \
+    )"
+  if [[ "$prop" != "$3" ]]; then
+    echo "Failed: check for $1: expected \"$3\", got \"$prop\""
+    return 1
+  fi
+}
+
 "$EXE" destroydb
 "$EXE" createdb
 echo "TEST FILE" >"$tmpdir/test_file"
 echo " Submitting..."
 "$EXE" submit --username=BEEP123 --service=none --comment="ABCDEF" --type=special --submitted=2030-01-15 --starts=2030-01-31 --ends=2030-04-04 --form="$tmpdir/test_file"
-echo " Checking username..."; [[ $("$EXE" info 1 | getprop "Username") == "BEEP123" ]]
-echo " Checking dates...";    [[ $("$EXE" info 1 | getprop "Submitted") == "2030-01-15" ]]
-                              [[ $("$EXE" info 1 | getprop "Starts") == "2030-01-31" ]]
-                              [[ $("$EXE" info 1 | getprop "Ends") == "2030-04-04" ]]
-echo " Checking service...";  [[ $("$EXE" info 1 | getprop "Service") == "none" ]]
-echo " Checking type...";     [[ $("$EXE" info 1 | getprop "Type") == "special" ]]
-echo " Checking status...";   [[ $("$EXE" info 1 | getprop "Status") == "undecided" ]]
+echo " Checking username..."; checkprop 1 "Username"  "BEEP123"
+echo " Checking dates...";    checkprop 1 "Submitted" "2030-01-15"
+                              checkprop 1 "Starts"    "2030-01-31" 
+                              checkprop 1 "Ends"      "2030-04-04"
+echo " Checking service...";  checkprop 1 "Service"   "none"
+echo " Checking type...";     checkprop 1 "Type"      "special"
+echo " Checking status...";   checkprop 1 "Status"    "undecided"
 echo " Marking as approved..."
 "$EXE" approve 1
 echo " Marking as implemented..."
