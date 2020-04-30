@@ -108,8 +108,8 @@ function getprop() {
 "$EXE" destroydb
 "$EXE" createdb
 echo "TEST FILE" >"$tmpdir/test_file"
-"$EXE" submit --username=BEEP --service=none --comment="ABCDEF" --type=special --submitted=2030-01-15 --starts=2030-01-31 --ends=2030-04-04 --form="$tmpdir/test_file"
-[[ $("$EXE" info 1 | getprop "Username") == "BEEP" ]]
+"$EXE" submit --username=BEEP123 --service=none --comment="ABCDEF" --type=special --submitted=2030-01-15 --starts=2030-01-31 --ends=2030-04-04 --form="$tmpdir/test_file"
+[[ $("$EXE" info 1 | getprop "Username") == "BEEP123" ]]
 [[ $("$EXE" info 1 | getprop "Submitted") == "2030-01-15" ]]
 [[ $("$EXE" info 1 | getprop "Starts") == "2030-01-15" ]]
 [[ $("$EXE" info 1 | getprop "Ends") == "2030-01-15" ]]
