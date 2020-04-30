@@ -114,7 +114,7 @@ function checkprop() {
       | getprop "$2" \
     )"
   if [[ "$prop" != "$3" ]]; then
-    echo "Failed: check for $1: expected \"$3\", got \"$prop\""
+    echo "Failed: check for $2 in entry $1: expected \"$3\", got \"$prop\""
     return 1
   fi
 }
@@ -124,7 +124,7 @@ function checkprop() {
 echo "TEST FILE" >"$tmpdir/test_file"
 echo " Submitting..."
 "$EXE" submit --username=BEEP123 --service=none --comment="ABCDEF" --type=special --submitted=2030-01-15 --starts=2030-01-31 --ends=2030-04-04 --form="$tmpdir/test_file"
-echo " Checking username..."; checkprop 1 "Username"  "BEEP123"
+echo " Checking username..."; checkprop 1 "Username"  "beep123" # Usernames should force lowercase
 echo " Checking dates...";    checkprop 1 "Submitted" "2030-01-15"
                               checkprop 1 "Starts"    "2030-01-31" 
                               checkprop 1 "Ends"      "2030-04-04"
