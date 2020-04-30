@@ -50,12 +50,12 @@ if "$EXE" submit --username="someone" --service="XXXXXXX"; then
   pr "Entry should have failed, instead succeeded."
   false
 fi
-echo "travis_fold:start:dumps"
+echo "travis_fold:start:listing_dumps"
 pb "Listing..."
 "$EXE" list
 pb "Printing dump..."
 "$EXE" dumpjson
-echo "travis_fold:end:dumps"
+echo "travis_fold:end:listing_dumps"
 pb "Testing dump and re-import..."
 "$EXE" dumpjson >"$tmpdir/dump-before.json"
 "$EXE" list >"$tmpdir/dump-before.list"
@@ -108,22 +108,30 @@ function getprop() {
 "$EXE" destroydb
 "$EXE" createdb
 echo "TEST FILE" >"$tmpdir/test_file"
+echo " Submitting..."
 "$EXE" submit --username=BEEP123 --service=none --comment="ABCDEF" --type=special --submitted=2030-01-15 --starts=2030-01-31 --ends=2030-04-04 --form="$tmpdir/test_file"
-[[ $("$EXE" info 1 | getprop "Username") == "BEEP123" ]]
-[[ $("$EXE" info 1 | getprop "Submitted") == "2030-01-15" ]]
-[[ $("$EXE" info 1 | getprop "Starts") == "2030-01-15" ]]
-[[ $("$EXE" info 1 | getprop "Ends") == "2030-01-15" ]]
-[[ $("$EXE" info 1 | getprop "Service") == "none" ]]
-[[ $("$EXE" info 1 | getprop "Type") == "special" ]]
-[[ $("$EXE" info 1 | getprop "Status") == "undecided" ]]
+echo " Checking username..."; [[ $("$EXE" info 1 | getprop "Username") == "BEEP123" ]]
+echo " Checking dates...";    [[ $("$EXE" info 1 | getprop "Submitted") == "2030-01-15" ]]
+                              [[ $("$EXE" info 1 | getprop "Starts") == "2030-01-31" ]]
+                              [[ $("$EXE" info 1 | getprop "Ends") == "2030-04-04" ]]
+echo " Checking service...";  [[ $("$EXE" info 1 | getprop "Service") == "none" ]]
+echo " Checking type...";     [[ $("$EXE" info 1 | getprop "Type") == "special" ]]
+echo " Checking status...";   [[ $("$EXE" info 1 | getprop "Status") == "undecided" ]]
+echo " Marking as approved..."
 "$EXE" approve 1
+echo " Marking as implemented..."
 "$EXE" implemented 1
+echo " Checking status updates..."
 [[ "$("$EXE" info 1 | grep -c "Status Change")" == "3" ]]
 [[ $("$EXE" info 1 | getprop "Status") == "implemented" ]]
+echo " Adding comment..."
 "$EXE" comment -c "MNOPQ"
+echo " Marking as removed..."
 "$EXE" remove 1
+echo " Checking status updates..."
 [[ "$("$EXE" info 1 | grep -c "Status Change")" == "4" ]]
 [[ $("$EXE" info 1 | getprop "Status") == "removed" ]]
+echo " Checking form attachment..."
 "$EXE" form download-for 1
 diff -q "test_file" "$tmpdir/test_file"
 pb "Complete."
