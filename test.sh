@@ -96,5 +96,35 @@ if diff -q "$tmpdir/dump-before.list" "$tmpdir/dump-after-different.list" >/dev/
   pr "listings before and after submitting new exception should be different, instead were the same."
   false
 fi
+
+
+# Okay, those were kind of simple.
+# Now to test a workflow.
+pb "Testing a sample workflow..."
+function getprop() {
+  grep "$1" \
+    sed -e 's/^[^|]*| //'
+}
+"$EXE" destroydb
+"$EXE" createdb
+echo "TEST FILE" >"$tmpdir/test_file"
+"$EXE" submit --username=BEEP --service=none --comment="ABCDEF" --type=special --submitted=2030-01-15 --starts=2030-01-31 --ends=2030-04-04 --form="$tmpdir/test_file"
+[[ $("$EXE" info 1 | getprop "Username") == "BEEP" ]]
+[[ $("$EXE" info 1 | getprop "Submitted") == "2030-01-15" ]]
+[[ $("$EXE" info 1 | getprop "Starts") == "2030-01-15" ]]
+[[ $("$EXE" info 1 | getprop "Ends") == "2030-01-15" ]]
+[[ $("$EXE" info 1 | getprop "Service") == "none" ]]
+[[ $("$EXE" info 1 | getprop "Type") == "special" ]]
+[[ $("$EXE" info 1 | getprop "Status") == "undecided" ]]
+"$EXE" approve 1
+"$EXE" implemented 1
+[[ "$("$EXE" info 1 | grep -c "Status Change")" == "3" ]]
+[[ $("$EXE" info 1 | getprop "Status") == "implemented" ]]
+"$EXE" comment -c "MNOPQ"
+"$EXE" remove 1
+[[ "$("$EXE" info 1 | grep -c "Status Change")" == "4" ]]
+[[ $("$EXE" info 1 | getprop "Status") == "removed" ]]
+"$EXE" form download-for 1
+diff -q "test_file" "$tmpdir/test_file"
 pb "Complete."
 echo "travis_fold:end:test_running"
