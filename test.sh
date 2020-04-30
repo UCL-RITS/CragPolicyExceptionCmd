@@ -1,5 +1,12 @@
 #!/bin/bash
 
+function pb() {
+  printf "\e[34m%s\e[0m\n" "$*"
+}
+function pr() {
+  printf "\e[31m%s\e[0m\n" "$*"
+}
+
 echo "travis_fold:start:Setting up config"
 
 TRAVIS_MYSQL_PORT="$(grep -e '^port =' "$HOME/.my.cnf" | sed -e 's/port = //')"
@@ -15,20 +22,21 @@ cat >"$HOME/.exceptions_db.conf" <<EOF
 }
 EOF
 
-echo "travis_fold:start:Setting up config"
+echo "travis_fold:start:test_setup"
 
 tmpdir="$(mktemp -d)"
 
-echo "travis_fold:start:Running tests"
-echo "Creating database schema..."
+echo "travis_fold:start:test_running"
+pb "Running tests..."
+pb "Creating database schema..."
 "$EXE" createdb
-echo "Creating blank dump for comparison..."
+pb "Creating blank dump for comparison..."
 "$EXE" dumpjson >"$tmpdir/dump-blank.json"
-echo "Destroying database schema..."
+pb "Destroying database schema..."
 "$EXE" destroydb
-echo "Recreating database schema for rest of tests..."
+pb "Recreating database schema for rest of tests..."
 "$EXE" createdb
-echo "Submitting several entries..."
+pb "Submitting several entries..."
 # One for each cluster
 "$EXE" submit --username="someone" --service="myriad"
 "$EXE" submit --username="someone" --service="legion"
@@ -36,40 +44,40 @@ echo "Submitting several entries..."
 "$EXE" submit --username="someone" --service="kathleen"
 "$EXE" submit --username="someone" --service="thomas"
 "$EXE" submit --username="someone" --service="michael"
-echo "Submitting an invalid entry (invalid clustername)..."
+pb "Submitting an invalid entry (invalid clustername)..."
 if "$EXE" submit --username="someone" --service="XXXXXXX"; then
-  echo "Entry should have failed, instead succeeded."
+  pr "Entry should have failed, instead succeeded."
   false
 fi
-echo "Listing..."
+pb "Listing..."
 "$EXE" list
-echo "Testing dump and re-import..."
+pb "Testing dump and re-import..."
 "$EXE" dumpjson >"$tmpdir/dump-before.json"
 "$EXE" list >"$tmpdir/dump-before.list"
-echo "  Destroying and recreating db..."
+pb "  Destroying and recreating db..."
 "$EXE" destroydb
 "$EXE" createdb
-echo "  Checking fresh blank dump matches old one..."
+pb "  Checking fresh blank dump matches old one..."
 "$EXE" dumpjson >"$tmpdir/dump-blank-2.json"
 diff -q "$tmpdir/dump-blank.json" "$tmpdir/dump-blank-2.json"
-echo "  Reimporting dump..."
+pb "  Reimporting dump..."
 "$EXE" importjson <"$tmpdir/dump-before.json"
 "$EXE" list >"$tmpdir/dump-after.list"
 "$EXE" dumpjson >"$tmpdir/dump-after.json"
-echo "  Comparing before and after data..."
+pb "  Comparing before and after data..."
 diff -q "$tmpdir/dump-before.json" "$tmpdir/dump-after.json"
 diff -q "$tmpdir/dump-before.list" "$tmpdir/dump-after.list"
-echo "  Submitting new entry to create different dump..."
+pb "  Submitting new entry to create different dump..."
 "$EXE" submit --username="someone" --service="michael"
 "$EXE" dumpjson >"$tmpdir/dump-after-different.json"
 "$EXE" list >"$tmpdir/dump-after-different.list"
-if diff -q "$tmpdir/dump-before.json" "$tmpdir/dump-after-different.json"; then
-  echo "These files should be different, instead were the same."
+if diff -q "$tmpdir/dump-before.json" "$tmpdir/dump-after-different.json" >/dev/null; then
+  pr "dumps before and after submitting new exception should be different, instead were the same."
   false
 fi
-if diff -q "$tmpdir/dump-before.list" "$tmpdir/dump-after-different.list"; then
-  echo "These files should be different, instead were the same."
+if diff -q "$tmpdir/dump-before.list" "$tmpdir/dump-after-different.list" >/dev/null; then
+  pr "listings before and after submitting new exception should be different, instead were the same."
   false
 fi
-echo "Complete."
-echo "travis_fold:end:Running tests"
+pb "Complete."
+echo "travis_fold:end:test_running"
