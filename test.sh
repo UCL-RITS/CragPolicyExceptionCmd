@@ -139,7 +139,7 @@ echo " Checking status updates..."
 [[ "$("$EXE" info 1 | grep -c "Status Change")" == "3" ]]
 [[ $("$EXE" info 1 | getprop "Status") == "implemented" ]]
 echo " Adding comment..."
-"$EXE" comment -c "MNOPQ"
+"$EXE" comment -c "MNOPQ" 1
 echo " Marking as removed..."
 "$EXE" remove 1
 echo " Checking status updates..."
