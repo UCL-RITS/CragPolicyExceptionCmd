@@ -59,5 +59,17 @@ echo "  Reimporting dump..."
 echo "  Comparing before and after data..."
 diff -q "$tmpdir/dump-before.json" "$tmpdir/dump-after.json"
 diff -q "$tmpdir/dump-before.list" "$tmpdir/dump-after.list"
+echo "  Submitting new entry to create different dump..."
+"$EXE" submit --username="someone" --service="michael"
+"$EXE" dumpjson >"$tmpdir/dump-after-different.json"
+"$EXE" list >"$tmpdir/dump-after-different.list"
+if diff -q "$tmpdir/dump-before.json" "$tmpdir/dump-after-different.json"; then
+  echo "These files should be different, instead were the same."
+  false
+fi
+if diff -q "$tmpdir/dump-before.list" "$tmpdir/dump-after-different.list"; then
+  echo "These files should be different, instead were the same."
+  false
+fi
 echo "Complete."
 echo "travis_fold:end:Running tests"
