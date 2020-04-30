@@ -103,7 +103,9 @@ fi
 pb "Testing a sample workflow..."
 function getprop() {
   grep "$1" \
-    | sed -e 's/^[^|]*| //'
+    | sed -e 's/^[^|]*| //' \
+          -e 's/ *$//' \
+          -e 's/^ *//'
 }
 "$EXE" destroydb
 "$EXE" createdb
