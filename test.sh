@@ -27,6 +27,7 @@ echo "travis_fold:start:test_setup"
 tmpdir="$(mktemp -d)"
 
 echo "travis_fold:start:test_running"
+set -o errexit
 pb "Running tests..."
 pb "Creating database schema..."
 "$EXE" createdb
@@ -49,10 +50,12 @@ if "$EXE" submit --username="someone" --service="XXXXXXX"; then
   pr "Entry should have failed, instead succeeded."
   false
 fi
+echo "travis_fold:start:dumps"
 pb "Listing..."
 "$EXE" list
 pb "Printing dump..."
 "$EXE" dumpjson
+echo "travis_fold:end:dumps"
 pb "Testing dump and re-import..."
 "$EXE" dumpjson >"$tmpdir/dump-before.json"
 "$EXE" list >"$tmpdir/dump-before.list"
