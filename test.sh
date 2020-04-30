@@ -102,7 +102,7 @@ fi
 # Now to test a workflow.
 pb "Testing a sample workflow..."
 function getprop() {
-  grep "$1" \
+  grep "^ *$1 *|" \
     | sed -e 's/^[^|]*| //' \
           -e 's/ *$//' \
           -e 's/^ *//'
