@@ -17,7 +17,7 @@ var (
 
 func filterSubmittedUsername(name string) (string, error) {
 	name = strings.ToLower(name)
-	allowedChars := "abcdefghijklmnopqrstuvxyz1234567890"
+	allowedChars := "abcdefghijklmnopqrstuvwxyz1234567890"
 	valid := true
 	errorSlice := []string{}
 
