@@ -8,7 +8,7 @@ import (
 
 // These have global scope so the CLI can tell people
 var (
-	validServices       = []string{"myriad", "legion", "grace", "aristotle", "thomas", "michael", "kathleen", "none"}
+	validServices       = []string{"myriad", "legion", "grace", "aristotle", "thomas", "michael", "kathleen", "young", "none"}
 	validExceptionTypes = []string{"quota", "queue", "access", "special", "sharedspace"}
 
 	validServicesString       = strings.Join(validServices, ", ")
