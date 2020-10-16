@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json" // While I recognise that JSON is not ideal, it was either this or XML without adding another dependency
 	"io/ioutil"
 	"log"
@@ -29,7 +30,7 @@ func getExampleConfigText() string {
 func parseDBConfig(filename string) *DBConfig {
 	configFile, err := os.Open(filename)
 	if err != nil {
-		log.Fatal("Could not open config file: ", err)
+		log.Fatal("Fatal error: could not open config file: ", err)
 	}
 	defer configFile.Close()
 
@@ -38,6 +39,7 @@ func parseDBConfig(filename string) *DBConfig {
 	buffer, err = ioutil.ReadAll(configFile)
 
 	if err != nil {
+		log.Println("Fatal error: could not read config file: " + filename)
 		panic(err)
 	}
 
@@ -45,6 +47,11 @@ func parseDBConfig(filename string) *DBConfig {
 
 	err = json.Unmarshal(buffer, dbConfig)
 	if err != nil {
+		log.Println("Fatal error: could not parse config file: " + filename)
+		switch t := err.(type) {
+		case *json.SyntaxError:
+			log.Printf("Syntax error on line %d\n", 1+bytes.Count(buffer[0:t.Offset], []byte("\n")))
+		}
 		panic(err)
 	}
 
