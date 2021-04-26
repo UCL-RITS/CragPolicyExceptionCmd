@@ -12,6 +12,7 @@ import (
 
 func attach(id uint, filename string) (uint, error) {
 	db := getDB()
+	defer db.Close()
 	exception := &Exception{}
 	db.First(&exception, id)
 	if exception.ID == 0 {
@@ -35,6 +36,7 @@ func attach(id uint, filename string) (uint, error) {
 
 func getFilesForException(id uint) ([]FormFile, error) {
 	db := getDB()
+	defer db.Close()
 	exception := &Exception{}
 	db.First(&exception, id)
 	if exception.ID == 0 {
@@ -79,6 +81,7 @@ func listFilesForException(id uint) {
 //  referred to it directly by ID
 func downloadOneFile(fileID uint) {
 	db := getDB()
+	defer db.Close()
 	file := &FormFile{}
 	db.First(&file, fileID)
 	if file.ID == 0 {

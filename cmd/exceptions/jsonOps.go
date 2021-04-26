@@ -11,6 +11,7 @@ import (
 func dumpAllAsJson() {
 	var allExceptions []Exception
 	db := getDB()
+	defer db.Close()
 	db.Preload("Comments").Preload("FormFiles").Preload("StatusChanges").Find(&allExceptions)
 	jsonBytes, err := json.MarshalIndent(allExceptions, "", " ")
 
@@ -36,6 +37,7 @@ func importAllAsJson() {
 	}
 
 	db := getDB()
+	defer db.Close()
 	importTransaction := db.Begin()
 
 	for _, e := range exceptionsImport {

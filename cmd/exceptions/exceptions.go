@@ -172,6 +172,7 @@ func (exception *Exception) ChangeStatusTo(newStatus string, checkChangeValidity
 	exception.Status = newStatus
 
 	db := getDB()
+	defer db.Close()
 	db.Create(statusChange)
 	db.NewRecord(statusChange)
 	db.Save(exception)
@@ -190,6 +191,7 @@ func (exception *Exception) AddComment(text string) (uint, error) {
 	comment := &Comment{ExceptionID: exception.ID, CommentText: text, CommentBy: currentUsername}
 
 	db := getDB()
+	defer db.Close()
 	db.Save(comment)
 	return comment.ID, nil
 }
@@ -327,6 +329,7 @@ func stringFromDate(timeIn *time.Time) string {
 
 func printExceptionTableSummary(exceptions []Exception) {
 	db := getDB()
+	defer db.Close()
 
 	if len(exceptions) == 0 {
 		log.Print("No such records found.")
@@ -415,6 +418,8 @@ func submitWithAllParts(username string, submitDateString string, startDateStrin
 
 func comment(id uint, commentText string) (uint, error) {
 	db := getDB()
+	defer db.Close()
+
 	exception := &Exception{}
 
 	exRetrErrors := db.First(&exception, id).GetErrors()
