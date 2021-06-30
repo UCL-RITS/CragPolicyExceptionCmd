@@ -1,5 +1,0 @@
-# May contain secrets
-service_exceptions.conf
-
-# Temporary file for SQLite testing
-gorm.db
