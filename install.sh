@@ -28,6 +28,9 @@ fi
 
 install_path="${INSTALL_PATH:-/shared/ucl/apps/cluster-bin}"
 
+echo "Changing into \"$(dirname -- "$0")\"..." >&2
+cd "$(dirname -- "$0")"
+
 echo "Recreating go.mod and go.sum..." >&2
 go mod init github.com/UCL-RITS/CragPolicyExceptionCmd
 
