@@ -33,6 +33,7 @@ cd "$(dirname -- "$0")"
 
 echo "Recreating go.mod and go.sum..." >&2
 go mod init github.com/UCL-RITS/CragPolicyExceptionCmd
+go mod tidy
 
 echo "Building..." >&2
 ./build.sh
