@@ -75,7 +75,7 @@ var (
 			validExceptionTypesString+
 			")").Default("quota").String()
 
-	listOpts      = []string{"all", "undecided", "approved", "rejected", "needed", "active", "removed", "overdue", "pending", "inconsistent", "todo"}
+	listOpts      = []string{"all", "undecided", "approved", "rejected", "needed", "active", "implemented", "removed", "overdue", "pending", "inconsistent", "todo"}
 	listHelp      = fmt.Sprintf("Class of exception to list (%s)", strings.Join(listOpts, ", "))
 	listClassEnum = listCmd.Arg("class", listHelp).Default("all").Enum(listOpts...)
 

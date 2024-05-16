@@ -55,9 +55,12 @@ type StatusChange struct {
 }
 
 // This contains a map that determines which statuses can become which other
-//   statuses. It returns true if a state change is allowed, false otherwise.
+//
+//	statuses. It returns true if a state change is allowed, false otherwise.
+//
 // Note that the state change functions have force flags that skip this check
-//   for awkward cases, and it won't break anything -- this is just to direct flow.
+//
+//	for awkward cases, and it won't break anything -- this is just to direct flow.
 func isValidChange(oldStatus string, newStatus string) bool {
 	validChanges := make(map[string][]string)
 	validChanges["(none)"] = []string{"undecided"}
@@ -85,16 +88,19 @@ func GetException(id uint) *Exception {
 }
 
 // This was added relatively late, because it seemed like the wrong thing
-//  to do (double-tracking the status based on the last audit result and
-//  a separate field) but it made some things *much* easier, at the risk
-//  of being able to become inconsistent.
+//
+//	to do (double-tracking the status based on the last audit result and
+//	a separate field) but it made some things *much* easier, at the risk
+//	of being able to become inconsistent.
+//
 // Hence, GetTrackedStatus exists because it used to be GetStatus.
 func (exception *Exception) GetStatus() string {
 	return exception.Status
 }
 
 // Gets the current status of an Exception by getting the most recent
-//   status update and checking its new status field.
+//
+//	status update and checking its new status field.
 //
 // Note that this is faster if preloading has been done, but doesn't require it.
 func (exception *Exception) GetTrackedStatus() string {
@@ -128,8 +134,10 @@ func (exception *Exception) GetTrackedStatus() string {
 
 // This function calls the gorm Delete function on an Exception object.
 // Because the Exception struct has a DeletedAt field, this will soft-delete
-//   the database entry, filling the DeletedAt field with the time and making
-//   all gorm's queries ignore the entry by default.
+//
+//	the database entry, filling the DeletedAt field with the time and making
+//	all gorm's queries ignore the entry by default.
+//
 // The data will still be in the database.
 func SoftDeleteException(id uint) []error {
 	db := getDB()
@@ -291,6 +299,11 @@ func list(kind string) {
 		db.Where("status = 'approved' AND start_date > " + timeNow).Find(&listSet)
 		printExceptionTableSummary(listSet)
 	case "active":
+		// "active" is synonymous with "implemented" here to make the interface make... some manner of sense
+		// so we fall through to it
+		// (go case statements do not otherwise fall through)
+		fallthrough
+	case "implemented":
 		db.Where("status = 'implemented'").Find(&listSet)
 		printExceptionTableSummary(listSet)
 	case "overdue":
